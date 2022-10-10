@@ -1,0 +1,27 @@
+# Ignore Data
+**/**data**/**
+# !data/natalia_eb_rna_smoothed.npz
+# !data/wormTrNet2.npz
+# !data/cell_info.csv
+# !data/dyngen_expression_bif.csv
+
+/assets/
+/imgs/
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# DotEnv configuration
+.env
+
+# VS Code
+.vscode/
+
+# Jupyter NB Checkpoints
+.ipynb_checkpoints/
+
+# Mac OS-specific storage files
+.DS_Store
+
+results/**
+.last_checked
