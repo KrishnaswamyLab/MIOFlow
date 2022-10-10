@@ -26,7 +26,7 @@ $ conda env create -f environment.yml
 This will create a new conda environment `sklab-mioflow`, which can be activated via:
 
 ```
-conda activate sklab-toy-tjnet
+conda activate sklab-mioflow
 ```
 
 ### Add kernel to Jupyter Notebook
