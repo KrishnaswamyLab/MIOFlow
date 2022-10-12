@@ -127,6 +127,6 @@ One can also consult or modify the tutorial notebooks for their uses:
 - [Dyngen tutorial][dyngen]
 - [Petals tutorial][petals]
 
-[ebbodies]: https://github.com/dsm-72/MIOFlow/blob/main/notebooks/EB-Bodies.ipynb
-[dyngen]: https://github.com/dsm-72/MIOFlow/blob/main/notebooks/Dyngen.ipynb
-[petals]: https://github.com/dsm-72/MIOFlow/blob/main/notebooks/%5BMMD%5D%5BTEST%5D%5BDiamond%20Petals%5D%20Trajectory%20Net.ipynb
+[ebbodies]: https://github.com/KrishnaswamyLab/MIOFlow/blob/main/notebooks/%5BTutorial%5D%20EB-Hold-out.ipynb
+[dyngen]: https://github.com/KrishnaswamyLab/MIOFlow/blob/main/notebooks/%5BTutorial%5D%20Dyngen.ipynb
+[petals]: https://github.com/KrishnaswamyLab/MIOFlow/blob/main/notebooks/%5BTutorial%5D%20Petal.ipynb
