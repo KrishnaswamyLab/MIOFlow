@@ -1,7 +1,7 @@
-repository: dsm-72/ToyTrajectoryNet
+repository: dsm-72/MIOFlow
 output: web
-topnav_title: ToyTrajectoryNet
-site_title: ToyTrajectoryNet
+topnav_title: MIOFlow
+site_title: MIOFlow
 company_name: Yale
 description: A description of your project
 # Set to false to disable KaTeX math
