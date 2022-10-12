@@ -32,8 +32,7 @@ nb_path: "07_datasets.ipynb"
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stderr output_text">
-<pre>/home/solstice/Projects/ToyTrajectoryNet/ToyTrajectoryNet/datasets.py:152: SyntaxWarning: &#34;is not&#34; with a literal. Did you mean &#34;!=&#34;?
-  if n_sample is not &#39;all&#39; and not phate:
+<pre>&lt;frozen importlib._bootstrap&gt;:228: RuntimeWarning: scipy._lib.messagestream.MessageStream size changed, may indicate binary incompatibility. Expected 56 from C header, got 64 from PyObject
 </pre>
 </div>
 </div>
@@ -62,7 +61,7 @@ nb_path: "07_datasets.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="construct_diamond" class="doc_header"><code>construct_diamond</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/datasets.py#L17" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>construct_diamond</code>(<strong><code>points_per_petal</code></strong>:<code>int</code>=<em><code>200</code></em>, <strong><code>petal_width</code></strong>:<code>float</code>=<em><code>0.25</code></em>, <strong><code>direction</code></strong>:<code>str</code>=<em><code>'y'</code></em>)</p>
+<h4 id="construct_diamond" class="doc_header"><code>construct_diamond</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/datasets.py#L17" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>construct_diamond</code>(<strong><code>points_per_petal</code></strong>:<code>int</code>=<em><code>200</code></em>, <strong><code>petal_width</code></strong>:<code>float</code>=<em><code>0.25</code></em>, <strong><code>direction</code></strong>:<code>str</code>=<em><code>'y'</code></em>)</p>
 </blockquote>
 <h2 id="Arguments:">Arguments:<a class="anchor-link" href="#Arguments:"> </a></h2>
 <pre><code>points_per_petal (int). Defaults to `200`. Number of points per petal.
@@ -94,7 +93,7 @@ direction (str): Defaults to 'y'. Options `'y'` or `'x'`. Whether to make vertic
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="make_diamonds" class="doc_header"><code>make_diamonds</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/datasets.py#L45" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>make_diamonds</code>(<strong><code>points_per_petal</code></strong>:<code>int</code>=<em><code>200</code></em>, <strong><code>petal_width</code></strong>:<code>float</code>=<em><code>0.25</code></em>, <strong><code>colors</code></strong>:<code>int</code>=<em><code>5</code></em>, <strong><code>scale_factor</code></strong>:<code>float</code>=<em><code>30</code></em>, <strong><code>use_gaussian</code></strong>:<code>bool</code>=<em><code>True</code></em>)</p>
+<h4 id="make_diamonds" class="doc_header"><code>make_diamonds</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/datasets.py#L45" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>make_diamonds</code>(<strong><code>points_per_petal</code></strong>:<code>int</code>=<em><code>200</code></em>, <strong><code>petal_width</code></strong>:<code>float</code>=<em><code>0.25</code></em>, <strong><code>colors</code></strong>:<code>int</code>=<em><code>5</code></em>, <strong><code>scale_factor</code></strong>:<code>float</code>=<em><code>30</code></em>, <strong><code>use_gaussian</code></strong>:<code>bool</code>=<em><code>True</code></em>)</p>
 </blockquote>
 <h2 id="Arguments:">Arguments:<a class="anchor-link" href="#Arguments:"> </a></h2>
 <pre><code>points_per_petal (int). Defaults to `200`. Number of points per petal.
@@ -181,7 +180,7 @@ use_gaussian (bool): Defaults to `True`. Whether to use random or gaussian noise
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="make_swiss_roll" class="doc_header"><code>make_swiss_roll</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/datasets.py#L87" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>make_swiss_roll</code>(<strong><code>n_points</code></strong>=<em><code>1500</code></em>)</p>
+<h4 id="make_swiss_roll" class="doc_header"><code>make_swiss_roll</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/datasets.py#L87" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>make_swiss_roll</code>(<strong><code>n_points</code></strong>=<em><code>1500</code></em>)</p>
 </blockquote>
 <h2 id="Arguments:">Arguments:<a class="anchor-link" href="#Arguments:"> </a></h2>
 <pre><code>n_points (int): Default to `1500`.
@@ -219,7 +218,7 @@ use_gaussian (bool): Defaults to `True`. Whether to use random or gaussian noise
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="make_tree" class="doc_header"><code>make_tree</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/datasets.py#L104" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>make_tree</code>()</p>
+<h4 id="make_tree" class="doc_header"><code>make_tree</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/datasets.py#L104" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>make_tree</code>()</p>
 </blockquote>
 <h2 id="Arguments:">Arguments:<a class="anchor-link" href="#Arguments:"> </a></h2>
 <pre><code>n_points (int): Default to `1500`.
@@ -257,7 +256,7 @@ use_gaussian (bool): Defaults to `True`. Whether to use random or gaussian noise
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="make_worm_data" class="doc_header"><code>make_worm_data</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/datasets.py#L126" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>make_worm_data</code>()</p>
+<h4 id="make_worm_data" class="doc_header"><code>make_worm_data</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/datasets.py#L126" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>make_worm_data</code>()</p>
 </blockquote>
 
 </div>
@@ -288,55 +287,7 @@ use_gaussian (bool): Defaults to `True`. Whether to use random or gaussian noise
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="make_eb_data" class="doc_header"><code>make_eb_data</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/datasets.py#L141" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>make_eb_data</code>(<strong><code>phate</code></strong>=<em><code>False</code></em>, <strong><code>phate_dims</code></strong>=<em><code>5</code></em>, <strong><code>n_sample</code></strong>=<em><code>'all'</code></em>, <strong><code>random_state</code></strong>=<em><code>1</code></em>)</p>
-</blockquote>
-
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-<div class="output_subarea output_stream output_stderr output_text">
-<pre>&lt;&gt;:15: SyntaxWarning: &#34;is not&#34; with a literal. Did you mean &#34;!=&#34;?
-&lt;&gt;:15: SyntaxWarning: &#34;is not&#34; with a literal. Did you mean &#34;!=&#34;?
-/tmp/ipykernel_446696/70530588.py:15: SyntaxWarning: &#34;is not&#34; with a literal. Did you mean &#34;!=&#34;?
-  if n_sample is not &#39;all&#39; and not phate:
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-<div class="output_markdown rendered_html output_subarea ">
-<h4 id="make_dyngen_data" class="doc_header"><code>make_dyngen_data</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/datasets.py#L169" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>make_dyngen_data</code>(<strong><code>time_col</code></strong>=<em><code>'simulation_i'</code></em>, <strong><code>phate_dims</code></strong>=<em><code>10</code></em>, <strong><code>round_labels</code></strong>=<em><code>True</code></em>, <strong><code>use_gaussian</code></strong>:<code>bool</code>=<em><code>True</code></em>, <strong><code>add_noise</code></strong>=<em><code>True</code></em>, <strong><code>add_noise_after_phate</code></strong>=<em><code>False</code></em>, <strong><code>scale_factor</code></strong>:<code>float</code>=<em><code>30</code></em>, <strong><code>scale_phate</code></strong>=<em><code>100</code></em>)</p>
+<h4 id="make_eb_data" class="doc_header"><code>make_eb_data</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/datasets.py#L141" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>make_eb_data</code>(<strong><code>phate</code></strong>=<em><code>False</code></em>, <strong><code>phate_dims</code></strong>=<em><code>5</code></em>, <strong><code>n_sample</code></strong>=<em><code>'all'</code></em>, <strong><code>random_state</code></strong>=<em><code>1</code></em>)</p>
 </blockquote>
 
 </div>
@@ -367,7 +318,31 @@ use_gaussian (bool): Defaults to `True`. Whether to use random or gaussian noise
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="relabel_data" class="doc_header"><code>relabel_data</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/datasets.py#L213" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>relabel_data</code>(<strong><code>df</code></strong>, <strong><code>n_bins</code></strong>=<em><code>10</code></em>, <strong><code>column</code></strong>=<em><code>'d1'</code></em>, <strong><code>samples_key</code></strong>=<em><code>'samples'</code></em>)</p>
+<h4 id="make_dyngen_data" class="doc_header"><code>make_dyngen_data</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/datasets.py#L170" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>make_dyngen_data</code>(<strong><code>time_col</code></strong>=<em><code>'sim_time'</code></em>, <strong><code>phate_dims</code></strong>=<em><code>10</code></em>, <strong><code>round_labels</code></strong>=<em><code>True</code></em>, <strong><code>use_gaussian</code></strong>:<code>bool</code>=<em><code>False</code></em>, <strong><code>add_noise</code></strong>=<em><code>False</code></em>, <strong><code>add_noise_after_phate</code></strong>=<em><code>False</code></em>, <strong><code>scale_factor</code></strong>:<code>float</code>=<em><code>1</code></em>, <strong><code>scale_phate</code></strong>=<em><code>100</code></em>, <strong><code>n_bins</code></strong>=<em><code>5</code></em>, <strong><code>column</code></strong>=<em><code>'d1'</code></em>)</p>
+</blockquote>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_markdown rendered_html output_subarea ">
+<h4 id="relabel_data" class="doc_header"><code>relabel_data</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/datasets.py#L231" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>relabel_data</code>(<strong><code>df</code></strong>, <strong><code>min_bin</code></strong>=<em><code>0</code></em>, <strong><code>n_bins</code></strong>=<em><code>10</code></em>, <strong><code>column</code></strong>=<em><code>'d1'</code></em>, <strong><code>samples_key</code></strong>=<em><code>'samples'</code></em>)</p>
 </blockquote>
 
 </div>
@@ -390,6 +365,36 @@ use_gaussian (bool): Defaults to `True`. Whether to use random or gaussian noise
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># def relabel_data(df, n_bins=10, column=&#39;d1&#39;, samples_key=&#39;samples&#39;):</span>
+<span class="c1">#     dff = df.copy()</span>
+    
+<span class="c1">#     x_min = np.min(dff[column])</span>
+<span class="c1">#     x_max = np.max(dff[column])</span>
+    
+<span class="c1">#     parts = np.linspace(x_min, x_max, n_bins+1)</span>
+<span class="c1">#     value = list(range(0, n_bins+1, 1))</span>
+<span class="c1">#     for i, x in list(zip(value, parts))[::-1]:</span>
+<span class="c1">#         if i == 0:</span>
+<span class="c1">#             continue</span>
+<span class="c1">#         locs = (dff[column] &lt;= x)</span>
+<span class="c1">#         dff.loc[locs, samples_key] = i</span>
+<span class="c1">#     return dff</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
 
 <div class="output_wrapper">
 <div class="output">
@@ -398,7 +403,7 @@ use_gaussian (bool): Defaults to `True`. Whether to use random or gaussian noise
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="rings" class="doc_header"><code>rings</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/datasets.py#L231" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>rings</code>(<strong><code>N</code></strong>:<code>int</code>, <strong><code>M</code></strong>:<code>int</code>=<em><code>None</code></em>, <strong><code>data_scale</code></strong>:<code>float</code>=<em><code>1</code></em>, <strong><code>add_noise</code></strong>:<code>bool</code>=<em><code>True</code></em>, <strong><code>noise_scale_theta</code></strong>:<code>float</code>=<em><code>0.7</code></em>, <strong><code>noise_scale_radius</code></strong>:<code>float</code>=<em><code>0.03</code></em>, <strong><code>buffer</code></strong>:<code>float</code>=<em><code>0.8</code></em>, <strong>**<code>kwargs</code></strong>)</p>
+<h4 id="rings" class="doc_header"><code>rings</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/datasets.py#L249" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>rings</code>(<strong><code>N</code></strong>:<code>int</code>, <strong><code>M</code></strong>:<code>int</code>=<em><code>None</code></em>, <strong><code>data_scale</code></strong>:<code>float</code>=<em><code>1</code></em>, <strong><code>add_noise</code></strong>:<code>bool</code>=<em><code>True</code></em>, <strong><code>noise_scale_theta</code></strong>:<code>float</code>=<em><code>0.7</code></em>, <strong><code>noise_scale_radius</code></strong>:<code>float</code>=<em><code>0.03</code></em>, <strong><code>buffer</code></strong>:<code>float</code>=<em><code>0.8</code></em>, <strong>**<code>kwargs</code></strong>)</p>
 </blockquote>
 <p>Arguments:
     N (int): Number of points to make.
@@ -434,7 +439,7 @@ use_gaussian (bool): Defaults to `True`. Whether to use random or gaussian noise
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="make_rings" class="doc_header"><code>make_rings</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/datasets.py#L292" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>make_rings</code>(<strong><code>N</code></strong>:<code>int</code>, <strong><code>M</code></strong>:<code>int</code>=<em><code>None</code></em>, <strong><code>data_scale</code></strong>:<code>float</code>=<em><code>1</code></em>, <strong><code>add_noise</code></strong>:<code>bool</code>=<em><code>True</code></em>, <strong><code>noise_scale_theta</code></strong>:<code>float</code>=<em><code>0.7</code></em>, <strong><code>noise_scale_radius</code></strong>:<code>float</code>=<em><code>0.03</code></em>, <strong><code>buffer</code></strong>:<code>float</code>=<em><code>0.8</code></em>, <strong>**<code>kwargs</code></strong>)</p>
+<h4 id="make_rings" class="doc_header"><code>make_rings</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/datasets.py#L310" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>make_rings</code>(<strong><code>N</code></strong>:<code>int</code>, <strong><code>M</code></strong>:<code>int</code>=<em><code>None</code></em>, <strong><code>data_scale</code></strong>:<code>float</code>=<em><code>1</code></em>, <strong><code>add_noise</code></strong>:<code>bool</code>=<em><code>True</code></em>, <strong><code>noise_scale_theta</code></strong>:<code>float</code>=<em><code>0.7</code></em>, <strong><code>noise_scale_radius</code></strong>:<code>float</code>=<em><code>0.03</code></em>, <strong><code>buffer</code></strong>:<code>float</code>=<em><code>0.8</code></em>, <strong>**<code>kwargs</code></strong>)</p>
 </blockquote>
 <p>Arguments:
     N (int): Number of points to make.
@@ -535,7 +540,7 @@ use_gaussian (bool): Defaults to `True`. Whether to use random or gaussian noise
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="make_jacks" class="doc_header"><code>make_jacks</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/datasets.py#L323" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>make_jacks</code>(<strong><code>n_axes</code></strong>=<em><code>3</code></em>, <strong><code>points</code></strong>=<em><code>1000</code></em>, <strong><code>label_by</code></strong>=<em><code>'axis'</code></em>, <strong><code>n_classes</code></strong>=<em><code>3</code></em>, <strong><code>use_neg</code></strong>=<em><code>True</code></em>, <strong><code>data_scale</code></strong>=<em><code>3</code></em>, <strong><code>add_noise</code></strong>=<em><code>True</code></em>, <strong><code>noise_scale</code></strong>=<em><code>0.03</code></em>)</p>
+<h4 id="make_jacks" class="doc_header"><code>make_jacks</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/datasets.py#L341" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>make_jacks</code>(<strong><code>n_axes</code></strong>=<em><code>3</code></em>, <strong><code>points</code></strong>=<em><code>1000</code></em>, <strong><code>label_by</code></strong>=<em><code>'axis'</code></em>, <strong><code>n_classes</code></strong>=<em><code>3</code></em>, <strong><code>use_neg</code></strong>=<em><code>True</code></em>, <strong><code>data_scale</code></strong>=<em><code>3</code></em>, <strong><code>add_noise</code></strong>=<em><code>True</code></em>, <strong><code>noise_scale</code></strong>=<em><code>0.03</code></em>)</p>
 </blockquote>
 
 </div>
@@ -613,5 +618,5 @@ use_gaussian (bool): Defaults to `True`. Whether to use random or gaussian noise
     {% endraw %}
 
 </div>
- 
+
 

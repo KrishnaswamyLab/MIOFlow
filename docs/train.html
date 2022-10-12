@@ -26,6 +26,20 @@ nb_path: "05_train.ipynb"
     
 <div class="cell border-box-sizing code_cell rendered">
 
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>&lt;frozen importlib._bootstrap&gt;:228: RuntimeWarning: scipy._lib.messagestream.MessageStream size changed, may indicate binary incompatibility. Expected 56 from C header, got 64 from PyObject
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
 </div>
     {% endraw %}
 
@@ -40,9 +54,9 @@ nb_path: "05_train.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="train" class="doc_header"><code>train</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/train.py#L17" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>train</code>(<strong><code>model</code></strong>, <strong><code>df</code></strong>, <strong><code>groups</code></strong>, <strong><code>optimizer</code></strong>, <strong><code>n_batches</code></strong>, <strong><code>criterion</code></strong>=<em><code>MMD_loss()</code></em>, <strong><code>use_cuda</code></strong>=<em><code>False</code></em>, <strong><code>sample_size</code></strong>=<em><code>(100,)</code></em>, <strong><code>sample_with_replacement</code></strong>=<em><code>False</code></em>, <strong><code>local_loss</code></strong>=<em><code>True</code></em>, <strong><code>global_loss</code></strong>=<em><code>False</code></em>, <strong><code>hold_one_out</code></strong>=<em><code>False</code></em>, <strong><code>hold_out</code></strong>=<em><code>'random'</code></em>, <strong><code>apply_losses_in_time</code></strong>=<em><code>True</code></em>, <strong><code>top_k</code></strong>=<em><code>5</code></em>, <strong><code>hinge_value</code></strong>=<em><code>0.01</code></em>, <strong><code>use_density_loss</code></strong>=<em><code>True</code></em>, <strong><code>use_local_density</code></strong>=<em><code>False</code></em>, <strong><code>lambda_density</code></strong>=<em><code>1.0</code></em>, <strong><code>lambda_density_local</code></strong>=<em><code>1.0</code></em>, <strong><code>geo_emb</code></strong>=<em><code>None</code></em>, <strong><code>use_emb</code></strong>=<em><code>True</code></em>, <strong><code>use_gaussian</code></strong>:<code>bool</code>=<em><code>True</code></em>, <strong><code>add_noise</code></strong>:<code>bool</code>=<em><code>True</code></em>, <strong><code>noise_scale</code></strong>:<code>float</code>=<em><code>0.3</code></em>, <strong><code>logger</code></strong>=<em><code>None</code></em>, <strong><code>autoencoder</code></strong>=<em><code>None</code></em>, <strong><code>n_samples</code></strong>=<em><code>1</code></em>, <strong><code>use_penalty</code></strong>=<em><code>False</code></em>, <strong><code>lambda_energy</code></strong>=<em><code>1.0</code></em>)</p>
+<h4 id="train" class="doc_header"><code>train</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/train.py#L18" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>train</code>(<strong><code>model</code></strong>, <strong><code>df</code></strong>, <strong><code>groups</code></strong>, <strong><code>optimizer</code></strong>, <strong><code>n_batches</code></strong>=<em><code>20</code></em>, <strong><code>criterion</code></strong>=<em><code>MMD_loss()</code></em>, <strong><code>use_cuda</code></strong>=<em><code>False</code></em>, <strong><code>sample_size</code></strong>=<em><code>(100,)</code></em>, <strong><code>sample_with_replacement</code></strong>=<em><code>False</code></em>, <strong><code>local_loss</code></strong>=<em><code>True</code></em>, <strong><code>global_loss</code></strong>=<em><code>False</code></em>, <strong><code>hold_one_out</code></strong>=<em><code>False</code></em>, <strong><code>hold_out</code></strong>=<em><code>'random'</code></em>, <strong><code>apply_losses_in_time</code></strong>=<em><code>True</code></em>, <strong><code>top_k</code></strong>=<em><code>5</code></em>, <strong><code>hinge_value</code></strong>=<em><code>0.01</code></em>, <strong><code>use_density_loss</code></strong>=<em><code>True</code></em>, <strong><code>lambda_density</code></strong>=<em><code>1.0</code></em>, <strong><code>autoencoder</code></strong>=<em><code>None</code></em>, <strong><code>use_emb</code></strong>=<em><code>True</code></em>, <strong><code>use_gae</code></strong>=<em><code>False</code></em>, <strong><code>use_gaussian</code></strong>:<code>bool</code>=<em><code>True</code></em>, <strong><code>add_noise</code></strong>:<code>bool</code>=<em><code>False</code></em>, <strong><code>noise_scale</code></strong>:<code>float</code>=<em><code>0.1</code></em>, <strong><code>logger</code></strong>=<em><code>None</code></em>, <strong><code>use_penalty</code></strong>=<em><code>False</code></em>, <strong><code>lambda_energy</code></strong>=<em><code>1.0</code></em>, <strong><code>reverse</code></strong>:<code>bool</code>=<em><code>False</code></em>)</p>
 </blockquote>
-<p>Training loop for Stupid Simple ODE</p>
+<p>MIOFlow training loop</p>
 <p>Notes:</p>
 
 <pre><code>- The argument `model` must have a method `forward` that accepts two arguments
@@ -50,7 +64,8 @@ nb_path: "05_train.ipynb"
         ```python
         model.forward(x, t)
         ```
-    where, `x` is the input tensor and `t` is an `torch.Tensor` of time points (float).
+    where, `x` is the input tensor and `t` is a `torch.Tensor` of time points (float).
+- The training loop is divided in two parts; local (predict t+1 from t), and global (predict the entire trajectory).
 
 </code></pre>
 <p>Arguments:
@@ -63,16 +78,16 @@ groups (list): the list of the numerical groups in the data, e.g.
 
 optimizer (torch.optim): an optimizer initilized with the model's parameters.
 
-criterion (Callable | nn.Loss): a loss function.
-
-n_batches (int): the number of batches from which to randomly sample each consecutive pair
+n_batches (int): Default to '20', the number of batches from which to randomly sample each consecutive pair
     of groups.
+
+criterion (Callable | nn.Loss): a loss function.
 
 use_cuda (bool): Defaults to `False`. Whether or not to send the model and data to cuda.
 
 sample_size (tuple): Defaults to `(100, )`
 
-sample_with_replacement (bool): Defaults to `True`. Whether or not to sample data points with replacement.
+sample_with_replacement (bool): Defaults to `False`. Whether or not to sample data points with replacement.
 
 local_loss (bool): Defaults to `True`. Whether or not to use a local loss in the model.
     See notes for more detail.
@@ -88,58 +103,33 @@ hold_out (str | int): Defaults to `"random"`. Which time point to hold out when 
 apply_losses_in_time (bool): Defaults to `True`. Applies the losses and does back propegation
     as soon as a loss is calculated. See notes for more detail.
 
-top_k (int): The k for the k-NN used in the density loss.
+top_k (int): Default to '5'. The k for the k-NN used in the density loss.
 
-hinge_value (float): The hinge value for density loss. Defaults to `0.01`.
+hinge_value (float): Defaults to `0.01`. The hinge value for density loss.
 
 use_density_loss (bool): Defaults to `True`. Whether or not to add density regularization.
 
-lambda_density (float): the weight for density loss. Defaults to `1.0`.
+lambda_density (float): Defaults to `1.0`. The weight for density loss.
 
-geo_emb (nn.Module): the trained geodesic embedding model
+autoencoder (NoneType|nn.Module): Default to 'None'. The full geodesic Autoencoder.
 
 use_emb (bool): Defaults to `True`. Whether or not to use the embedding model.
 
+use_gae (bool): Defaults to `False`. Whether or not to use the full Geodesic AutoEncoder.
+
 use_gaussian (bool): Defaults to `True`. Whether to use random or gaussian noise.
 
-add_noise (bool): Defaults to `True`. Whether or not to add noise.
+add_noise (bool): Defaults to `False`. Whether or not to add noise.
 
 noise_scale (float): Defaults to `0.30`. How much to scale the noise by.
 
-use_penalty (bool): Defaults to `True`. Whether or not to use $L_e$ during training (norm of the derivative).
+logger (NoneType|Logger): Default to 'None'. The logger to record information.
 
-lambda_energy (float): weight of the energy penalty</code></pre>
+use_penalty (bool): Defaults to `False`. Whether or not to use $L_e$ during training (norm of the derivative).
 
-</div>
+lambda_energy (float): Default to '1.0'. The weight of the energy penalty.
 
-</div>
-
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-<div class="output_markdown rendered_html output_subarea ">
-<h4 id="train_emb" class="doc_header"><code>train_emb</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/train.py#L292" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>train_emb</code>(<strong><code>model</code></strong>, <strong><code>decoder</code></strong>, <strong><code>df</code></strong>, <strong><code>groups</code></strong>, <strong><code>optimizer</code></strong>, <strong><code>optimizer_decode</code></strong>, <strong><code>n_epochs</code></strong>=<em><code>60</code></em>, <strong><code>criterion</code></strong>=<em><code>MSELoss()</code></em>, <strong><code>geo_dist</code></strong>=<em><code>&lt;ToyTrajectoryNet.geo.DiffusionDistance object at 0x7f0d0c956040&gt;</code></em>, <strong><code>use_cuda</code></strong>=<em><code>True</code></em>, <strong><code>sample_size</code></strong>=<em><code>(100,)</code></em>, <strong><code>sample_with_replacement</code></strong>=<em><code>False</code></em>, <strong><code>w_recon</code></strong>=<em><code>1.0</code></em>, <strong><code>noise_min_scale</code></strong>=<em><code>0</code></em>, <strong><code>noise_max_scale</code></strong>=<em><code>1.0</code></em>)</p>
-</blockquote>
+reverse (bool): Whether to train time backwards.</code></pre>
 
 </div>
 
@@ -169,8 +159,317 @@ lambda_energy (float): weight of the energy penalty</code></pre>
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="train_ae" class="doc_header"><code>train_ae</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/train.py#L342" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>train_ae</code>(<strong><code>model</code></strong>, <strong><code>df</code></strong>, <strong><code>groups</code></strong>, <strong><code>optimizer</code></strong>, <strong><code>n_epochs</code></strong>=<em><code>60</code></em>, <strong><code>criterion</code></strong>=<em><code>MSELoss()</code></em>, <strong><code>dist</code></strong>=<em><code>None</code></em>, <strong><code>recon</code></strong>=<em><code>True</code></em>, <strong><code>use_cuda</code></strong>=<em><code>True</code></em>, <strong><code>sample_size</code></strong>=<em><code>(100,)</code></em>, <strong><code>sample_with_replacement</code></strong>=<em><code>False</code></em>, <strong><code>noise_min_scale</code></strong>=<em><code>0.0</code></em>, <strong><code>noise_max_scale</code></strong>=<em><code>1.0</code></em>)</p>
+<h4 id="train_ae" class="doc_header"><code>train_ae</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/train.py#L306" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>train_ae</code>(<strong><code>model</code></strong>, <strong><code>df</code></strong>, <strong><code>groups</code></strong>, <strong><code>optimizer</code></strong>, <strong><code>n_epochs</code></strong>=<em><code>60</code></em>, <strong><code>criterion</code></strong>=<em><code>MSELoss()</code></em>, <strong><code>dist</code></strong>=<em><code>None</code></em>, <strong><code>recon</code></strong>=<em><code>True</code></em>, <strong><code>use_cuda</code></strong>=<em><code>False</code></em>, <strong><code>sample_size</code></strong>=<em><code>(100,)</code></em>, <strong><code>sample_with_replacement</code></strong>=<em><code>False</code></em>, <strong><code>noise_min_scale</code></strong>=<em><code>0.09</code></em>, <strong><code>noise_max_scale</code></strong>=<em><code>0.15</code></em>, <strong><code>hold_one_out</code></strong>:<code>bool</code>=<em><code>False</code></em>, <strong><code>hold_out</code></strong>=<em><code>'random'</code></em>)</p>
 </blockquote>
+<p>Geodesic Autoencoder training loop.</p>
+<p>Notes:</p>
+
+<pre><code>- We can train only the encoder the fit the geodesic distance (recon=False), or the full geodesic Autoencoder (recon=True),
+    i.e. matching the distance and reconstruction of the inputs.
+
+</code></pre>
+<p>Arguments:</p>
+
+<pre><code>model (nn.Module): the initialized pytorch Geodesic Autoencoder model.
+
+df (pd.DataFrame): the DataFrame from which to extract batch data.
+
+groups (list): the list of the numerical groups in the data, e.g.
+    `[1.0, 2.0, 3.0, 4.0, 5.0]`, if the data has five groups.
+
+optimizer (torch.optim): an optimizer initilized with the model's parameters.
+
+n_epochs (int): Default to '60'. The number of training epochs.
+
+criterion (torch.nn). Default to 'nn.MSELoss()'. The criterion to minimize.
+
+dist (NoneType|Class). Default to 'None'. The distance Class with a 'fit(X)' method for a dataset 'X'. Computes the pairwise distances in 'X'.
+
+recon (bool): Default to 'True'. Whether or not the apply the reconstruction loss.
+
+use_cuda (bool): Defaults to `False`. Whether or not to send the model and data to cuda.
+
+sample_size (tuple): Defaults to `(100, )`.
+
+sample_with_replacement (bool): Defaults to `False`. Whether or not to sample data points with replacement.
+
+noise_min_scale (float): Default to '0.0'. The minimum noise scale.
+
+noise_max_scale (float): Default to '1.0'. The maximum noise scale. The true scale is sampled between these two bounds for each epoch.
+
+hold_one_out (bool): Default to False, whether or not to ignore a timepoint during training.
+
+hold_out (str|int): Default to 'random', the timepoint to hold out, either a specific element of 'groups' or a random one.</code></pre>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_markdown rendered_html output_subarea ">
+<h4 id="training_regimen" class="doc_header"><code>training_regimen</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/train.py#L411" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>training_regimen</code>(<strong><code>n_local_epochs</code></strong>, <strong><code>n_epochs</code></strong>, <strong><code>n_post_local_epochs</code></strong>, <strong><code>exp_dir</code></strong>, <strong><code>model</code></strong>, <strong><code>df</code></strong>, <strong><code>groups</code></strong>, <strong><code>optimizer</code></strong>, <strong><code>n_batches</code></strong>=<em><code>20</code></em>, <strong><code>criterion</code></strong>=<em><code>MMD_loss()</code></em>, <strong><code>use_cuda</code></strong>=<em><code>False</code></em>, <strong><code>hold_one_out</code></strong>=<em><code>False</code></em>, <strong><code>hold_out</code></strong>=<em><code>'random'</code></em>, <strong><code>hinge_value</code></strong>=<em><code>0.01</code></em>, <strong><code>use_density_loss</code></strong>=<em><code>True</code></em>, <strong><code>top_k</code></strong>=<em><code>5</code></em>, <strong><code>lambda_density</code></strong>=<em><code>1.0</code></em>, <strong><code>autoencoder</code></strong>=<em><code>None</code></em>, <strong><code>use_emb</code></strong>=<em><code>True</code></em>, <strong><code>use_gae</code></strong>=<em><code>False</code></em>, <strong><code>sample_size</code></strong>=<em><code>(100,)</code></em>, <strong><code>sample_with_replacement</code></strong>=<em><code>False</code></em>, <strong><code>logger</code></strong>=<em><code>None</code></em>, <strong><code>add_noise</code></strong>=<em><code>False</code></em>, <strong><code>noise_scale</code></strong>=<em><code>0.1</code></em>, <strong><code>use_gaussian</code></strong>=<em><code>True</code></em>, <strong><code>use_penalty</code></strong>=<em><code>False</code></em>, <strong><code>lambda_energy</code></strong>=<em><code>1.0</code></em>, <strong><code>steps</code></strong>=<em><code>None</code></em>, <strong><code>plot_every</code></strong>=<em><code>None</code></em>, <strong><code>n_points</code></strong>=<em><code>100</code></em>, <strong><code>n_trajectories</code></strong>=<em><code>100</code></em>, <strong><code>n_bins</code></strong>=<em><code>100</code></em>, <strong><code>local_losses</code></strong>=<em><code>None</code></em>, <strong><code>batch_losses</code></strong>=<em><code>None</code></em>, <strong><code>globe_losses</code></strong>=<em><code>None</code></em>, <strong><code>reverse_schema</code></strong>=<em><code>True</code></em>, <strong><code>reverse_n</code></strong>=<em><code>4</code></em>)</p>
+</blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>n_local_epochs</code></strong></td>
+<td></td>
+<td></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>n_epochs</code></strong></td>
+<td></td>
+<td></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>n_post_local_epochs</code></strong></td>
+<td></td>
+<td></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>exp_dir</code></strong></td>
+<td></td>
+<td></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>model</code></strong></td>
+<td></td>
+<td></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>df</code></strong></td>
+<td></td>
+<td></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>groups</code></strong></td>
+<td></td>
+<td></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>optimizer</code></strong></td>
+<td></td>
+<td></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>n_batches</code></strong></td>
+<td><code>int</code></td>
+<td><code>20</code></td>
+<td>BEGIN: train params</td>
+</tr>
+<tr>
+<td><strong><code>criterion</code></strong></td>
+<td><a href="/MIOFlow/losses.html#MMD_loss"><code>MMD_loss</code></a></td>
+<td><code>MMD_loss()</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>use_cuda</code></strong></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>hold_one_out</code></strong></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>hold_out</code></strong></td>
+<td><code>str</code></td>
+<td><code>random</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>hinge_value</code></strong></td>
+<td><code>float</code></td>
+<td><code>0.01</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>use_density_loss</code></strong></td>
+<td><code>bool</code></td>
+<td><code>True</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>top_k</code></strong></td>
+<td><code>int</code></td>
+<td><code>5</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>lambda_density</code></strong></td>
+<td><code>float</code></td>
+<td><code>1.0</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>autoencoder</code></strong></td>
+<td></td>
+<td><code>None</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>use_emb</code></strong></td>
+<td><code>bool</code></td>
+<td><code>True</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>use_gae</code></strong></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>sample_size</code></strong></td>
+<td><code>tuple</code></td>
+<td><code>100</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>sample_with_replacement</code></strong></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>logger</code></strong></td>
+<td></td>
+<td><code>None</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>add_noise</code></strong></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>noise_scale</code></strong></td>
+<td><code>float</code></td>
+<td><code>0.1</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>use_gaussian</code></strong></td>
+<td><code>bool</code></td>
+<td><code>True</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>use_penalty</code></strong></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>lambda_energy</code></strong></td>
+<td><code>float</code></td>
+<td><code>1.0</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>steps</code></strong></td>
+<td></td>
+<td><code>None</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>plot_every</code></strong></td>
+<td></td>
+<td><code>None</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>n_points</code></strong></td>
+<td><code>int</code></td>
+<td><code>100</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>n_trajectories</code></strong></td>
+<td><code>int</code></td>
+<td><code>100</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>n_bins</code></strong></td>
+<td><code>int</code></td>
+<td><code>100</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>local_losses</code></strong></td>
+<td></td>
+<td><code>None</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>batch_losses</code></strong></td>
+<td></td>
+<td><code>None</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>globe_losses</code></strong></td>
+<td></td>
+<td><code>None</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>reverse_schema</code></strong></td>
+<td><code>bool</code></td>
+<td><code>True</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>reverse_n</code></strong></td>
+<td><code>int</code></td>
+<td><code>4</code></td>
+<td><em>No Content</em></td>
+</tr>
+</tbody>
+</table>
 
 </div>
 
@@ -190,5 +489,5 @@ lambda_energy (float): weight of the energy penalty</code></pre>
     {% endraw %}
 
 </div>
- 
+
 

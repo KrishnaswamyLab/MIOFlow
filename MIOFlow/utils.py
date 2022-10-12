@@ -48,7 +48,7 @@ def config_hold_out(df:pd.DataFrame, hold_out:str='random', hold_one_out:bool=Fa
         raise ValueError(f'group={hold_out} not in known groups {groups}')
     return DF, groups
 
-from ToyTrajectoryNet.losses import MMD_loss, OT_loss
+from .losses import MMD_loss, OT_loss
 def config_criterion(criterion_name:str='ot'):
     _valid_criterion_names = 'ot mmd'.split()
     if criterion_name == 'mmd':

@@ -26,6 +26,20 @@ nb_path: "01_losses.ipynb"
     
 <div class="cell border-box-sizing code_cell rendered">
 
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>&lt;frozen importlib._bootstrap&gt;:228: RuntimeWarning: scipy._lib.messagestream.MessageStream size changed, may indicate binary incompatibility. Expected 56 from C header, got 64 from PyObject
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
 </div>
     {% endraw %}
 
@@ -40,7 +54,7 @@ nb_path: "01_losses.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="MMD_loss" class="doc_header"><code>class</code> <code>MMD_loss</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/losses.py#L10" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>MMD_loss</code>(<strong><code>kernel_mul</code></strong>=<em><code>2.0</code></em>, <strong><code>kernel_num</code></strong>=<em><code>5</code></em>) :: <code>Module</code></p>
+<h2 id="MMD_loss" class="doc_header"><code>class</code> <code>MMD_loss</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/losses.py#L10" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>MMD_loss</code>(<strong><code>kernel_mul</code></strong>=<em><code>2.0</code></em>, <strong><code>kernel_num</code></strong>=<em><code>5</code></em>) :: <code>Module</code></p>
 </blockquote>
 <p><a href="https://github.com/ZongxianLee/MMD_Loss.Pytorch/blob/master/mmd_loss.py">https://github.com/ZongxianLee/MMD_Loss.Pytorch/blob/master/mmd_loss.py</a></p>
 
@@ -72,7 +86,7 @@ nb_path: "01_losses.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="OT_loss" class="doc_header"><code>class</code> <code>OT_loss</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/losses.py#L50" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>OT_loss</code>(<strong><code>which</code></strong>=<em><code>'emd'</code></em>, <strong><code>use_cuda</code></strong>=<em><code>True</code></em>) :: <code>Module</code></p>
+<h2 id="OT_loss" class="doc_header"><code>class</code> <code>OT_loss</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/losses.py#L51" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>OT_loss</code>(<strong><code>which</code></strong>=<em><code>'emd'</code></em>, <strong><code>use_cuda</code></strong>=<em><code>True</code></em>) :: <code>Module</code></p>
 </blockquote>
 <p>Base class for all neural network modules.</p>
 <p>Your models should also subclass this class.</p>
@@ -127,7 +141,7 @@ parameters converted too when you call :meth:<code>to</code>, etc.</p>
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="Density_loss" class="doc_header"><code>class</code> <code>Density_loss</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/losses.py#L81" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>Density_loss</code>(<strong><code>hinge_value</code></strong>=<em><code>0.01</code></em>) :: <code>Module</code></p>
+<h2 id="Density_loss" class="doc_header"><code>class</code> <code>Density_loss</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/losses.py#L85" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>Density_loss</code>(<strong><code>hinge_value</code></strong>=<em><code>0.01</code></em>) :: <code>Module</code></p>
 </blockquote>
 <p>Base class for all neural network modules.</p>
 <p>Your models should also subclass this class.</p>
@@ -182,7 +196,7 @@ parameters converted too when you call :meth:<code>to</code>, etc.</p>
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="Local_density_loss" class="doc_header"><code>class</code> <code>Local_density_loss</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/losses.py#L107" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>Local_density_loss</code>() :: <code>Module</code></p>
+<h2 id="Local_density_loss" class="doc_header"><code>class</code> <code>Local_density_loss</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/losses.py#L111" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>Local_density_loss</code>() :: <code>Module</code></p>
 </blockquote>
 <p>Base class for all neural network modules.</p>
 <p>Your models should also subclass this class.</p>
@@ -227,5 +241,5 @@ parameters converted too when you call :meth:<code>to</code>, etc.</p>
     {% endraw %}
 
 </div>
- 
+
 

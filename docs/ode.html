@@ -40,7 +40,7 @@ nb_path: "00_ode.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="ode_solve" class="doc_header"><code>ode_solve</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/ode.py#L10" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>ode_solve</code>(<strong><code>z0</code></strong>, <strong><code>t0</code></strong>, <strong><code>t1</code></strong>, <strong><code>f</code></strong>)</p>
+<h4 id="ode_solve" class="doc_header"><code>ode_solve</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/ode.py#L10" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>ode_solve</code>(<strong><code>z0</code></strong>, <strong><code>t0</code></strong>, <strong><code>t1</code></strong>, <strong><code>f</code></strong>)</p>
 </blockquote>
 <p>Simplest Euler ODE initial value solver</p>
 
@@ -65,7 +65,7 @@ nb_path: "00_ode.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="ODEF" class="doc_header"><code>class</code> <code>ODEF</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/ode.py#L26" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>ODEF</code>() :: <code>Module</code></p>
+<h2 id="ODEF" class="doc_header"><code>class</code> <code>ODEF</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/ode.py#L26" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>ODEF</code>() :: <code>Module</code></p>
 </blockquote>
 <p>Base class for all neural network modules.</p>
 <p>Your models should also subclass this class.</p>
@@ -113,20 +113,25 @@ parameters converted too when you call :meth:<code>to</code>, etc.</p>
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="ODEAdjoint" class="doc_header"><code>class</code> <code>ODEAdjoint</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/ode.py#L54" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>ODEAdjoint</code>(<strong>*<code>args</code></strong>, <strong>**<code>kwargs</code></strong>) :: <code>Function</code></p>
+<h2 id="ODEAdjoint" class="doc_header"><code>class</code> <code>ODEAdjoint</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/ode.py#L54" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>ODEAdjoint</code>(<strong>*<code>args</code></strong>, <strong>**<code>kwargs</code></strong>) :: <code>Function</code></p>
 </blockquote>
-<p>Base class to create custom <code>autograd.Function</code></p>
-<p>To create a custom <code>autograd.Function</code>, subclass this class and implement
-the :meth:<code>forward</code> and :meth<code>backward</code> static methods. Then, to use your custom
-op in the forward pass, call the class method <code>apply</code>. Do not call
-:meth:<code>forward</code> directly.</p>
-<p>To ensure correctness and best performance, make sure you are calling the
-correct methods on <code>ctx</code> and validating your backward function using
-:func:<code>torch.autograd.gradcheck</code>.</p>
-<p>See :ref:<code>extending-autograd</code> for more details on how to use this class.</p>
+<p>Records operation history and defines formulas for differentiating ops.</p>
+<p>See the Note on extending the autograd engine for more details on how to use
+this class: <a href="https://pytorch.org/docs/stable/notes/extending.html#extending-torch-autograd">https://pytorch.org/docs/stable/notes/extending.html#extending-torch-autograd</a></p>
+<p>Every operation performed on :class:<code>Tensor</code> s creates a new function
+object, that performs the computation, and records that it happened.
+The history is retained in the form of a DAG of functions, with edges
+denoting data dependencies (<code>input &lt;- output</code>). Then, when backward is
+called, the graph is processed in the topological ordering, by calling
+:func:<code>backward</code> methods of each :class:<code>Function</code> object, and passing
+returned gradients on to next :class:<code>Function</code> s.</p>
+<p>Normally, the only way users interact with functions is by creating
+subclasses and defining new operations. This is a recommended way of
+extending torch.autograd.</p>
 <p>Examples::</p>
 
 <pre><code>&gt;&gt;&gt; class Exp(Function):
+&gt;&gt;&gt;
 &gt;&gt;&gt;     @staticmethod
 &gt;&gt;&gt;     def forward(ctx, i):
 &gt;&gt;&gt;         result = i.exp()
@@ -138,7 +143,7 @@ correct methods on <code>ctx</code> and validating your backward function using
 &gt;&gt;&gt;         result, = ctx.saved_tensors
 &gt;&gt;&gt;         return grad_output * result
 &gt;&gt;&gt;
-&gt;&gt;&gt; # Use it by calling the apply method:
+&gt;&gt;&gt; #Use it by calling the apply method:
 &gt;&gt;&gt; output = Exp.apply(input)</code></pre>
 
 </div>
@@ -162,7 +167,7 @@ correct methods on <code>ctx</code> and validating your backward function using
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="NeuralODE" class="doc_header"><code>class</code> <code>NeuralODE</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/ode.py#L153" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>NeuralODE</code>(<strong><code>func</code></strong>) :: <code>Module</code></p>
+<h2 id="NeuralODE" class="doc_header"><code>class</code> <code>NeuralODE</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/ode.py#L153" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>NeuralODE</code>(<strong><code>func</code></strong>) :: <code>Module</code></p>
 </blockquote>
 <p>Base class for all neural network modules.</p>
 <p>Your models should also subclass this class.</p>
@@ -207,5 +212,5 @@ parameters converted too when you call :meth:<code>to</code>, etc.</p>
     {% endraw %}
 
 </div>
- 
+
 

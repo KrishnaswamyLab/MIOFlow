@@ -1,9 +1,9 @@
-repository: dsm-72/MIOFlow
+repository: KrishnaswamyLab/MIOFlow
 output: web
 topnav_title: MIOFlow
 site_title: MIOFlow
-company_name: Yale
-description: A description of your project
+company_name: Yale University
+description: A toy example of MIOFlow
 # Set to false to disable KaTeX math
 use_math: true
 # Add Google analytics id if you have one and want to use it here

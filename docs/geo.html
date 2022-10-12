@@ -26,6 +26,20 @@ nb_path: "09_geo.ipynb"
     
 <div class="cell border-box-sizing code_cell rendered">
 
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>&lt;frozen importlib._bootstrap&gt;:228: RuntimeWarning: scipy._lib.messagestream.MessageStream size changed, may indicate binary incompatibility. Expected 56 from C header, got 64 from PyObject
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
 </div>
     {% endraw %}
 
@@ -40,7 +54,7 @@ nb_path: "09_geo.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="DiffusionDistance" class="doc_header"><code>class</code> <code>DiffusionDistance</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/geo.py#L12" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>DiffusionDistance</code>(<strong><code>t_max</code></strong>=<em><code>4</code></em>, <strong><code>knn</code></strong>=<em><code>30</code></em>, <strong><code>anisotropy</code></strong>=<em><code>1</code></em>, <strong><code>log</code></strong>=<em><code>False</code></em>, <strong><code>normalize</code></strong>=<em><code>False</code></em>, <strong><code>symmetrize</code></strong>=<em><code>False</code></em>)</p>
+<h2 id="DiffusionDistance" class="doc_header"><code>class</code> <code>DiffusionDistance</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/geo.py#L12" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>DiffusionDistance</code>(<strong><code>t_max</code></strong>=<em><code>5</code></em>, <strong><code>knn</code></strong>=<em><code>5</code></em>, <strong><code>anisotropy</code></strong>=<em><code>1</code></em>, <strong><code>log</code></strong>=<em><code>False</code></em>, <strong><code>normalize</code></strong>=<em><code>False</code></em>, <strong><code>symmetrize</code></strong>=<em><code>False</code></em>)</p>
 </blockquote>
 <p>class DiffusionDistance
     X (np.array) data
@@ -79,7 +93,7 @@ nb_path: "09_geo.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="DiffusionAffinity" class="doc_header"><code>class</code> <code>DiffusionAffinity</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/geo.py#L83" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>DiffusionAffinity</code>(<strong><code>knn</code></strong>=<em><code>5</code></em>, <strong><code>anisotropy</code></strong>=<em><code>0</code></em>, <strong><code>t_diff</code></strong>=<em><code>1</code></em>, <strong><code>topeig</code></strong>=<em><code>100</code></em>)</p>
+<h2 id="DiffusionAffinity" class="doc_header"><code>class</code> <code>DiffusionAffinity</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/geo.py#L83" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>DiffusionAffinity</code>(<strong><code>knn</code></strong>=<em><code>5</code></em>, <strong><code>anisotropy</code></strong>=<em><code>0</code></em>, <strong><code>t_diff</code></strong>=<em><code>1</code></em>, <strong><code>topeig</code></strong>=<em><code>100</code></em>)</p>
 </blockquote>
 <p>class DiffusionAffinity
     X (np.array) data
@@ -119,7 +133,7 @@ nb_path: "09_geo.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="DiffusionMap" class="doc_header"><code>class</code> <code>DiffusionMap</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/geo.py#L121" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>DiffusionMap</code>(<strong><code>knn</code></strong>=<em><code>5</code></em>, <strong><code>anisotropy</code></strong>=<em><code>0</code></em>, <strong><code>t_diff</code></strong>=<em><code>1</code></em>, <strong><code>topeig</code></strong>=<em><code>100</code></em>, <strong><code>n_emb</code></strong>=<em><code>10</code></em>)</p>
+<h2 id="DiffusionMap" class="doc_header"><code>class</code> <code>DiffusionMap</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/geo.py#L121" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>DiffusionMap</code>(<strong><code>knn</code></strong>=<em><code>5</code></em>, <strong><code>anisotropy</code></strong>=<em><code>0</code></em>, <strong><code>t_diff</code></strong>=<em><code>1</code></em>, <strong><code>topeig</code></strong>=<em><code>100</code></em>, <strong><code>n_emb</code></strong>=<em><code>10</code></em>)</p>
 </blockquote>
 <p>class DiffusionMap
     X (np.array) data
@@ -160,7 +174,7 @@ nb_path: "09_geo.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="PhateDistance" class="doc_header"><code>class</code> <code>PhateDistance</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/geo.py#L160" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>PhateDistance</code>(<strong><code>knn</code></strong>=<em><code>5</code></em>, <strong><code>anisotropy</code></strong>=<em><code>0</code></em>, <strong><code>verbose</code></strong>=<em><code>False</code></em>)</p>
+<h2 id="PhateDistance" class="doc_header"><code>class</code> <code>PhateDistance</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/geo.py#L160" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>PhateDistance</code>(<strong><code>knn</code></strong>=<em><code>5</code></em>, <strong><code>anisotropy</code></strong>=<em><code>0</code></em>, <strong><code>verbose</code></strong>=<em><code>False</code></em>)</p>
 </blockquote>
 <p>class PhateDistance
     X (np.array) data
@@ -198,7 +212,7 @@ nb_path: "09_geo.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="old_DiffusionDistance" class="doc_header"><code>class</code> <code>old_DiffusionDistance</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/geo.py#L194" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>old_DiffusionDistance</code>(<strong><code>kernel</code></strong>, <strong><code>t_max</code></strong>)</p>
+<h2 id="old_DiffusionDistance" class="doc_header"><code>class</code> <code>old_DiffusionDistance</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/geo.py#L194" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>old_DiffusionDistance</code>(<strong><code>kernel</code></strong>, <strong><code>t_max</code></strong>)</p>
 </blockquote>
 
 </div>
@@ -229,32 +243,8 @@ nb_path: "09_geo.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="GeoEmbedding" class="doc_header"><code>class</code> <code>GeoEmbedding</code><a href="https://github.com/dsm-72/ToyTrajectoryNet/tree/main/ToyTrajectoryNet/geo.py#L248" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>GeoEmbedding</code>(<strong><code>feature_dims</code></strong>=<em><code>5</code></em>, <strong><code>hidden_dims</code></strong>=<em><code>64</code></em>, <strong><code>out_dims</code></strong>=<em><code>5</code></em>, <strong><code>n_hlayers</code></strong>=<em><code>1</code></em>, <strong><code>act_fun</code></strong>=<em><code>'tanh'</code></em>) :: <code>Module</code></p>
+<h4 id="setup_distance" class="doc_header"><code>setup_distance</code><a href="https://github.com/dsm-72/MIOFlow/tree/main/MIOFlow/geo.py#L247" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>setup_distance</code>(<strong><code>distance_type</code></strong>:<code>str</code>=<em><code>'gaussian'</code></em>, <strong><code>rbf_length_scale</code></strong>:<code>float</code>=<em><code>0.5</code></em>, <strong><code>t_max</code></strong>:<code>int</code>=<em><code>5</code></em>, <strong><code>knn</code></strong>:<code>int</code>=<em><code>5</code></em>)</p>
 </blockquote>
-<p>Base class for all neural network modules.</p>
-<p>Your models should also subclass this class.</p>
-<p>Modules can also contain other Modules, allowing to nest them in
-a tree structure. You can assign the submodules as regular attributes::</p>
-
-<pre><code>import torch.nn as nn
-import torch.nn.functional as F
-
-class Model(nn.Module):
-    def __init__(self):
-        super(Model, self).__init__()
-        self.conv1 = nn.Conv2d(1, 20, 5)
-        self.conv2 = nn.Conv2d(20, 20, 5)
-
-    def forward(self, x):
-        x = F.relu(self.conv1(x))
-        return F.relu(self.conv2(x))
-
-</code></pre>
-<p>Submodules assigned in this way will be registered, and will have their
-parameters converted too when you call :meth:<code>to</code>, etc.</p>
-<p>:ivar training: Boolean represents whether this module is in training or
-                evaluation mode.
-:vartype training: bool</p>
 
 </div>
 
@@ -274,5 +264,5 @@ parameters converted too when you call :meth:<code>to</code>, etc.</p>
     {% endraw %}
 
 </div>
- 
+
 
