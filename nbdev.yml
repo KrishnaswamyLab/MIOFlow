@@ -1,0 +1,9 @@
+project:
+  output-dir: docs
+
+website:
+  title: "MIOFlow"
+  site-url: "https://KrishnaswamyLab.github.io/MIOFlow/"
+  description: "A toy example of MIOFlow"
+  repo-branch: main
+  repo-url: "https://github.com/KrishnaswamyLab/MIOFlow/tree/main/"
