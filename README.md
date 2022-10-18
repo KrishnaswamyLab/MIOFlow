@@ -3,17 +3,17 @@
 
 
 ## Currently TOC is broken, temp fix:
-- [`MIOFlow.ode`](https://krishnaswamylab.github.io/MIOFlow/ode)
-- [`MIOFlow.losses`](https://krishnaswamylab.github.io/MIOFlow/losses)
-- [`MIOFlow.utils`](https://krishnaswamylab.github.io/MIOFlow/utils)
-- [`MIOFlow.models`](https://krishnaswamylab.github.io/MIOFlow/models)
-- [`MIOFlow.plots`](https://krishnaswamylab.github.io/MIOFlow/plots)
-- [`MIOFlow.train`](https://krishnaswamylab.github.io/MIOFlow/train)
-- [`MIOFlow.constants`](https://krishnaswamylab.github.io/MIOFlow/constants)
-- [`MIOFlow.datasets`](https://krishnaswamylab.github.io/MIOFlow/datasets)
-- [`MIOFlow.exp`](https://krishnaswamylab.github.io/MIOFlow/exp)
-- [`MIOFlow.geo`](https://krishnaswamylab.github.io/MIOFlow//geo)
-- [`MIOFlow.eval`](https://krishnaswamylab.github.io/MIOFlow/eval)
+- [`MIOFlow.ode`](https://dsm-72.github.io/MIOFlow/ode)
+- [`MIOFlow.losses`](https://dsm-72.github.io/MIOFlow/losses)
+- [`MIOFlow.utils`](https://dsm-72.github.io/MIOFlow/utils)
+- [`MIOFlow.models`](https://dsm-72.github.io/MIOFlow/models)
+- [`MIOFlow.plots`](https://dsm-72.github.io/MIOFlow/plots)
+- [`MIOFlow.train`](https://dsm-72.github.io/MIOFlow/train)
+- [`MIOFlow.constants`](https://dsm-72.github.io/MIOFlow/constants)
+- [`MIOFlow.datasets`](https://dsm-72.github.io/MIOFlow/datasets)
+- [`MIOFlow.exp`](https://dsm-72.github.io/MIOFlow/exp)
+- [`MIOFlow.geo`](https://dsm-72.github.io/MIOFlow/geo)
+- [`MIOFlow.eval`](https://dsm-72.github.io/MIOFlow/eval)
 
 ## Setup
 
