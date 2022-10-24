@@ -95,8 +95,8 @@ modules = ["ode.py",
            "geo.py",
            "eval.py"]
 
-doc_url = "https://dsm-72.github.io/MIOFlow/"
+doc_url = "https://KrishnaswamyLab.github.io/MIOFlow/"
 
-git_url = "https://github.com/dsm-72/MIOFlow/tree/main/"
+git_url = "https://github.com/KrishnaswamyLab/MIOFlow/tree/main/"
 
 def custom_doc_links(name): return None
