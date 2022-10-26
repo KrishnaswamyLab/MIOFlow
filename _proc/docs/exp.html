@@ -6,9 +6,9 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="description" content="API details">
+<meta name="description" content="Functions to define the experiemnt setup, logger, and save the parameters.">
 
-<title>MIOFlow - Geo</title>
+<title>MIOFlow - Experiment</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -62,11 +62,11 @@ ul.task-list li input[type="checkbox"] {
 
 
 <link rel="stylesheet" href="styles.css">
-<meta property="og:title" content="MIOFlow - Geo">
-<meta property="og:description" content="API details">
+<meta property="og:title" content="MIOFlow - Experiment">
+<meta property="og:description" content="Functions to define the experiemnt setup, logger, and save the parameters.">
 <meta property="og:site-name" content="MIOFlow">
-<meta name="twitter:title" content="MIOFlow - Geo">
-<meta name="twitter:description" content="API details">
+<meta name="twitter:title" content="MIOFlow - Experiment">
+<meta name="twitter:description" content="Functions to define the experiemnt setup, logger, and save the parameters.">
 <meta name="twitter:card" content="summary">
 </head>
 
@@ -86,7 +86,7 @@ ul.task-list li input[type="checkbox"] {
     </nav>
   <nav class="quarto-secondary-nav" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
     <div class="container-fluid d-flex justify-content-between">
-      <h1 class="quarto-secondary-nav-title">Geo</h1>
+      <h1 class="quarto-secondary-nav-title">Experiment</h1>
       <button type="button" class="quarto-btn-toggle btn" aria-label="Show secondary navigation">
         <i class="bi bi-chevron-right"></i>
       </button>
@@ -146,12 +146,12 @@ ul.task-list li input[type="checkbox"] {
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./exp.html" class="sidebar-item-text sidebar-link">Experiment</a>
+  <a href="./exp.html" class="sidebar-item-text sidebar-link active">Experiment</a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./geo.html" class="sidebar-item-text sidebar-link active">Geo</a>
+  <a href="./geo.html" class="sidebar-item-text sidebar-link">Geo</a>
   </div>
 </li>
         <li class="sidebar-item">
@@ -168,12 +168,17 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#diffusiondistance" id="toc-diffusiondistance" class="nav-link active" data-scroll-target="#diffusiondistance">DiffusionDistance</a></li>
-  <li><a href="#diffusionaffinity" id="toc-diffusionaffinity" class="nav-link" data-scroll-target="#diffusionaffinity">DiffusionAffinity</a></li>
-  <li><a href="#diffusionmap" id="toc-diffusionmap" class="nav-link" data-scroll-target="#diffusionmap">DiffusionMap</a></li>
-  <li><a href="#phatedistance" id="toc-phatedistance" class="nav-link" data-scroll-target="#phatedistance">PhateDistance</a></li>
-  <li><a href="#old_diffusiondistance" id="toc-old_diffusiondistance" class="nav-link" data-scroll-target="#old_diffusiondistance">old_DiffusionDistance</a></li>
-  <li><a href="#setup_distance" id="toc-setup_distance" class="nav-link" data-scroll-target="#setup_distance">setup_distance</a></li>
+  <li><a href="#test_exp" id="toc-test_exp" class="nav-link active" data-scroll-target="#test_exp">test_exp</a></li>
+  <li><a href="#find_exps" id="toc-find_exps" class="nav-link" data-scroll-target="#find_exps">find_exps</a></li>
+  <li><a href="#is_config_subset" id="toc-is_config_subset" class="nav-link" data-scroll-target="#is_config_subset">is_config_subset</a></li>
+  <li><a href="#setup_exp" id="toc-setup_exp" class="nav-link" data-scroll-target="#setup_exp">setup_exp</a></li>
+  <li><a href="#save_exp_params" id="toc-save_exp_params" class="nav-link" data-scroll-target="#save_exp_params">save_exp_params</a></li>
+  <li><a href="#load_exp_params" id="toc-load_exp_params" class="nav-link" data-scroll-target="#load_exp_params">load_exp_params</a></li>
+  <li><a href="#gen_exp_name" id="toc-gen_exp_name" class="nav-link" data-scroll-target="#gen_exp_name">gen_exp_name</a></li>
+  <li><a href="#list_exps" id="toc-list_exps" class="nav-link" data-scroll-target="#list_exps">list_exps</a></li>
+  <li><a href="#exp_param_filename" id="toc-exp_param_filename" class="nav-link" data-scroll-target="#exp_param_filename">exp_param_filename</a></li>
+  <li><a href="#exp_log_filename" id="toc-exp_log_filename" class="nav-link" data-scroll-target="#exp_log_filename">exp_log_filename</a></li>
+  <li><a href="#config_exp_logger" id="toc-config_exp_logger" class="nav-link" data-scroll-target="#config_exp_logger">config_exp_logger</a></li>
   </ul>
 <div class="toc-actions"><div><i class="bi bi-github"></i></div><div class="action-links"><p><a href="https://github.com/KrishnaswamyLab/MIOFlow/tree/main/issues/new" class="toc-action">Report an issue</a></p></div></div></nav>
     </div>
@@ -182,12 +187,12 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title d-none d-lg-block">Geo</h1>
+<h1 class="title d-none d-lg-block">Experiment</h1>
 </div>
 
 <div>
   <div class="description">
-    API details
+    Functions to define the experiemnt setup, logger, and save the parameters.
   </div>
 </div>
 
@@ -203,59 +208,80 @@ ul.task-list li input[type="checkbox"] {
 
 <!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
 <hr>
-<section id="diffusiondistance" class="level3">
-<h3 class="anchored" data-anchor-id="diffusiondistance">DiffusionDistance</h3>
+<section id="test_exp" class="level3">
+<h3 class="anchored" data-anchor-id="test_exp">test_exp</h3>
 <blockquote class="blockquote">
-<pre><code> DiffusionDistance (t_max=5, knn=5, anisotropy=1, log=False,
-                    normalize=False, symmetrize=False)</code></pre>
+<pre><code> test_exp ()</code></pre>
 </blockquote>
-<p>class DiffusionDistance<br>
-X (np.array) data t_max (int), 2^t_max is the max scale of the Diffusion kernel knn (int) = 5 number of neighbors for the KNN in the alpha decay kernel construction, same default as in PHATE Anisotropy (int): the alpha in Coifman Lafon 2006, 1: double normalization 0: usual random walk log (bool) log(P) or not normalize (bool) min-max normalization of the distance matrix phate (bool) is PHATE op if true (should be the same as graphtool)</p>
 <hr>
 </section>
-<section id="diffusionaffinity" class="level3">
-<h3 class="anchored" data-anchor-id="diffusionaffinity">DiffusionAffinity</h3>
+<section id="find_exps" class="level3">
+<h3 class="anchored" data-anchor-id="find_exps">find_exps</h3>
 <blockquote class="blockquote">
-<pre><code> DiffusionAffinity (knn=5, anisotropy=0, t_diff=1, topeig=100)</code></pre>
+<pre><code> find_exps (path, params)</code></pre>
 </blockquote>
-<p>class DiffusionAffinity<br>
-X (np.array) data t_max (int), 2^t_max is the max scale of the Diffusion kernel knn (int) = 5 number of neighbors for the KNN in the alpha decay kernel construction, same default as in PHATE Anisotropy (int): the alpha in Coifman Lafon 2006, 1: double normalization 0: usual random walk t_diff (int) the power of the diffusion affinity matrix topeig (int) in the the top k eigenvalues to consider in the spectral decomposition</p>
-<p>return the l2 between the row of the affinity matrix A^t</p>
 <hr>
 </section>
-<section id="diffusionmap" class="level3">
-<h3 class="anchored" data-anchor-id="diffusionmap">DiffusionMap</h3>
+<section id="is_config_subset" class="level3">
+<h3 class="anchored" data-anchor-id="is_config_subset">is_config_subset</h3>
 <blockquote class="blockquote">
-<pre><code> DiffusionMap (knn=5, anisotropy=0, t_diff=1, topeig=100, n_emb=10)</code></pre>
+<pre><code> is_config_subset (truth, params)</code></pre>
 </blockquote>
-<p>class DiffusionMap<br>
-X (np.array) data t_max (int), 2^t_max is the max scale of the Diffusion kernel knn (int) = 5 number of neighbors for the KNN in the alpha decay kernel construction, same default as in PHATE Anisotropy (int): the alpha in Coifman Lafon 2006, 1: double normalization 0: usual random walk t_diff (int) the power of the diffusion affinity matrix topeig (int) in the the top k eigenvalues to consider in the spectral decomposition n_emb (int) the dimension of the emb space</p>
-<p>return the pairwise dist. in the diffusion map embedding space</p>
 <hr>
 </section>
-<section id="phatedistance" class="level3">
-<h3 class="anchored" data-anchor-id="phatedistance">PhateDistance</h3>
+<section id="setup_exp" class="level3">
+<h3 class="anchored" data-anchor-id="setup_exp">setup_exp</h3>
 <blockquote class="blockquote">
-<pre><code> PhateDistance (knn=5, anisotropy=0, verbose=False)</code></pre>
+<pre><code> setup_exp (path, params, name=None)</code></pre>
 </blockquote>
-<p>class PhateDistance<br>
-X (np.array) data knn (int) = 5 number of neighbors for the KNN in the alpha decay kernel construction, same default as in PHATE Anisotropy (int): the alpha in Coifman Lafon 2006, 1: double normalization 0: usual random walk verbose (bool): verbose param. in PHATE</p>
-<p>return PHATE distance the L2 between Potential of Heat-diffusion</p>
 <hr>
 </section>
-<section id="old_diffusiondistance" class="level3">
-<h3 class="anchored" data-anchor-id="old_diffusiondistance">old_DiffusionDistance</h3>
+<section id="save_exp_params" class="level3">
+<h3 class="anchored" data-anchor-id="save_exp_params">save_exp_params</h3>
 <blockquote class="blockquote">
-<pre><code> old_DiffusionDistance (kernel, t_max)</code></pre>
+<pre><code> save_exp_params (path, params, logger=None)</code></pre>
 </blockquote>
-<p>Initialize self. See help(type(self)) for accurate signature.</p>
 <hr>
 </section>
-<section id="setup_distance" class="level3">
-<h3 class="anchored" data-anchor-id="setup_distance">setup_distance</h3>
+<section id="load_exp_params" class="level3">
+<h3 class="anchored" data-anchor-id="load_exp_params">load_exp_params</h3>
 <blockquote class="blockquote">
-<pre><code> setup_distance (distance_type:str='gaussian', rbf_length_scale:float=0.5,
-                 t_max:int=5, knn:int=5)</code></pre>
+<pre><code> load_exp_params (path)</code></pre>
+</blockquote>
+<hr>
+</section>
+<section id="gen_exp_name" class="level3">
+<h3 class="anchored" data-anchor-id="gen_exp_name">gen_exp_name</h3>
+<blockquote class="blockquote">
+<pre><code> gen_exp_name (name=None)</code></pre>
+</blockquote>
+<hr>
+</section>
+<section id="list_exps" class="level3">
+<h3 class="anchored" data-anchor-id="list_exps">list_exps</h3>
+<blockquote class="blockquote">
+<pre><code> list_exps (path)</code></pre>
+</blockquote>
+<hr>
+</section>
+<section id="exp_param_filename" class="level3">
+<h3 class="anchored" data-anchor-id="exp_param_filename">exp_param_filename</h3>
+<blockquote class="blockquote">
+<pre><code> exp_param_filename (path)</code></pre>
+</blockquote>
+<hr>
+</section>
+<section id="exp_log_filename" class="level3">
+<h3 class="anchored" data-anchor-id="exp_log_filename">exp_log_filename</h3>
+<blockquote class="blockquote">
+<pre><code> exp_log_filename (path)</code></pre>
+</blockquote>
+<hr>
+</section>
+<section id="config_exp_logger" class="level3">
+<h3 class="anchored" data-anchor-id="config_exp_logger">config_exp_logger</h3>
+<blockquote class="blockquote">
+<pre><code> config_exp_logger (path)</code></pre>
 </blockquote>
 
 

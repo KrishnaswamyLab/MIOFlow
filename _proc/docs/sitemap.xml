@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://KrishnaswamyLab.github.io/MIOFlow/constants.html</loc>
-    <lastmod>2022-10-24T20:08:03.869Z</lastmod>
+    <lastmod>2022-10-26T21:02:15.430Z</lastmod>
   </url>
   <url>
     <loc>https://KrishnaswamyLab.github.io/MIOFlow/eval.html</loc>
@@ -10,11 +10,11 @@
   </url>
   <url>
     <loc>https://KrishnaswamyLab.github.io/MIOFlow/datasets.html</loc>
-    <lastmod>2022-10-24T20:08:04.509Z</lastmod>
+    <lastmod>2022-10-26T21:28:12.830Z</lastmod>
   </url>
   <url>
     <loc>https://KrishnaswamyLab.github.io/MIOFlow/geo.html</loc>
-    <lastmod>2022-10-24T20:08:04.759Z</lastmod>
+    <lastmod>2022-10-26T21:27:40.290Z</lastmod>
   </url>
   <url>
     <loc>https://KrishnaswamyLab.github.io/MIOFlow/08_exp.html</loc>
@@ -22,34 +22,38 @@
   </url>
   <url>
     <loc>https://KrishnaswamyLab.github.io/MIOFlow/plots.html</loc>
-    <lastmod>2022-10-24T20:08:05.209Z</lastmod>
+    <lastmod>2022-10-26T21:02:16.570Z</lastmod>
   </url>
   <url>
     <loc>https://KrishnaswamyLab.github.io/MIOFlow/ode.html</loc>
-    <lastmod>2022-10-24T20:08:05.409Z</lastmod>
+    <lastmod>2022-10-26T21:27:52.070Z</lastmod>
   </url>
   <url>
     <loc>https://KrishnaswamyLab.github.io/MIOFlow/utils.html</loc>
-    <lastmod>2022-10-24T20:08:05.609Z</lastmod>
+    <lastmod>2022-10-26T21:28:06.280Z</lastmod>
   </url>
   <url>
     <loc>https://KrishnaswamyLab.github.io/MIOFlow/index.html</loc>
-    <lastmod>2022-10-24T20:08:05.799Z</lastmod>
+    <lastmod>2022-10-26T21:27:40.640Z</lastmod>
   </url>
   <url>
     <loc>https://KrishnaswamyLab.github.io/MIOFlow/train.html</loc>
-    <lastmod>2022-10-24T20:08:06.079Z</lastmod>
+    <lastmod>2022-10-26T21:02:40.970Z</lastmod>
   </url>
   <url>
     <loc>https://KrishnaswamyLab.github.io/MIOFlow/losses.html</loc>
-    <lastmod>2022-10-24T20:08:06.269Z</lastmod>
+    <lastmod>2022-10-26T21:28:01.580Z</lastmod>
   </url>
   <url>
     <loc>https://KrishnaswamyLab.github.io/MIOFlow/models.html</loc>
-    <lastmod>2022-10-24T20:08:06.489Z</lastmod>
+    <lastmod>2022-10-26T21:28:09.830Z</lastmod>
   </url>
   <url>
     <loc>https://KrishnaswamyLab.github.io/MIOFlow/CONTRIBUTING.html</loc>
     <lastmod>2022-10-24T20:08:06.659Z</lastmod>
+  </url>
+  <url>
+    <loc>https://KrishnaswamyLab.github.io/MIOFlow/exp.html</loc>
+    <lastmod>2022-10-26T21:29:12.570Z</lastmod>
   </url>
 </urlset>
