@@ -2,58 +2,54 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://KrishnaswamyLab.github.io/MIOFlow/constants.html</loc>
-    <lastmod>2022-10-26T21:02:15.430Z</lastmod>
+    <lastmod>2022-10-27T19:56:13.693Z</lastmod>
   </url>
   <url>
     <loc>https://KrishnaswamyLab.github.io/MIOFlow/eval.html</loc>
-    <lastmod>2022-10-24T20:08:04.199Z</lastmod>
+    <lastmod>2022-10-27T19:56:14.073Z</lastmod>
   </url>
   <url>
     <loc>https://KrishnaswamyLab.github.io/MIOFlow/datasets.html</loc>
-    <lastmod>2022-10-26T21:28:12.830Z</lastmod>
+    <lastmod>2022-10-27T19:56:14.433Z</lastmod>
   </url>
   <url>
     <loc>https://KrishnaswamyLab.github.io/MIOFlow/geo.html</loc>
-    <lastmod>2022-10-26T21:27:40.290Z</lastmod>
-  </url>
-  <url>
-    <loc>https://KrishnaswamyLab.github.io/MIOFlow/08_exp.html</loc>
-    <lastmod>2022-10-24T20:08:04.949Z</lastmod>
-  </url>
-  <url>
-    <loc>https://KrishnaswamyLab.github.io/MIOFlow/plots.html</loc>
-    <lastmod>2022-10-26T21:02:16.570Z</lastmod>
-  </url>
-  <url>
-    <loc>https://KrishnaswamyLab.github.io/MIOFlow/ode.html</loc>
-    <lastmod>2022-10-26T21:27:52.070Z</lastmod>
-  </url>
-  <url>
-    <loc>https://KrishnaswamyLab.github.io/MIOFlow/utils.html</loc>
-    <lastmod>2022-10-26T21:28:06.280Z</lastmod>
-  </url>
-  <url>
-    <loc>https://KrishnaswamyLab.github.io/MIOFlow/index.html</loc>
-    <lastmod>2022-10-26T21:27:40.640Z</lastmod>
-  </url>
-  <url>
-    <loc>https://KrishnaswamyLab.github.io/MIOFlow/train.html</loc>
-    <lastmod>2022-10-26T21:02:40.970Z</lastmod>
-  </url>
-  <url>
-    <loc>https://KrishnaswamyLab.github.io/MIOFlow/losses.html</loc>
-    <lastmod>2022-10-26T21:28:01.580Z</lastmod>
-  </url>
-  <url>
-    <loc>https://KrishnaswamyLab.github.io/MIOFlow/models.html</loc>
-    <lastmod>2022-10-26T21:28:09.830Z</lastmod>
-  </url>
-  <url>
-    <loc>https://KrishnaswamyLab.github.io/MIOFlow/CONTRIBUTING.html</loc>
-    <lastmod>2022-10-24T20:08:06.659Z</lastmod>
+    <lastmod>2022-10-27T19:56:14.633Z</lastmod>
   </url>
   <url>
     <loc>https://KrishnaswamyLab.github.io/MIOFlow/exp.html</loc>
-    <lastmod>2022-10-26T21:29:12.570Z</lastmod>
+    <lastmod>2022-10-27T19:56:14.813Z</lastmod>
+  </url>
+  <url>
+    <loc>https://KrishnaswamyLab.github.io/MIOFlow/plots.html</loc>
+    <lastmod>2022-10-27T19:56:15.203Z</lastmod>
+  </url>
+  <url>
+    <loc>https://KrishnaswamyLab.github.io/MIOFlow/ode.html</loc>
+    <lastmod>2022-10-27T19:56:15.963Z</lastmod>
+  </url>
+  <url>
+    <loc>https://KrishnaswamyLab.github.io/MIOFlow/utils.html</loc>
+    <lastmod>2022-10-27T19:56:16.623Z</lastmod>
+  </url>
+  <url>
+    <loc>https://KrishnaswamyLab.github.io/MIOFlow/index.html</loc>
+    <lastmod>2022-10-27T19:56:16.853Z</lastmod>
+  </url>
+  <url>
+    <loc>https://KrishnaswamyLab.github.io/MIOFlow/train.html</loc>
+    <lastmod>2022-10-27T19:56:17.193Z</lastmod>
+  </url>
+  <url>
+    <loc>https://KrishnaswamyLab.github.io/MIOFlow/losses.html</loc>
+    <lastmod>2022-10-27T19:56:17.383Z</lastmod>
+  </url>
+  <url>
+    <loc>https://KrishnaswamyLab.github.io/MIOFlow/models.html</loc>
+    <lastmod>2022-10-27T19:56:17.653Z</lastmod>
+  </url>
+  <url>
+    <loc>https://KrishnaswamyLab.github.io/MIOFlow/CONTRIBUTING.html</loc>
+    <lastmod>2022-10-27T19:56:17.863Z</lastmod>
   </url>
 </urlset>

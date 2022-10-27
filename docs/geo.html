@@ -21,69 +21,6 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1.6em;
   vertical-align: middle;
 }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-    color: #aaaaaa;
-  }
-pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-}
-code span.al { color: #ff0000; font-weight: bold; } /* Alert */
-code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
-code span.at { color: #7d9029; } /* Attribute */
-code span.bn { color: #40a070; } /* BaseN */
-code span.bu { color: #008000; } /* BuiltIn */
-code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
-code span.ch { color: #4070a0; } /* Char */
-code span.cn { color: #880000; } /* Constant */
-code span.co { color: #60a0b0; font-style: italic; } /* Comment */
-code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
-code span.do { color: #ba2121; font-style: italic; } /* Documentation */
-code span.dt { color: #902000; } /* DataType */
-code span.dv { color: #40a070; } /* DecVal */
-code span.er { color: #ff0000; font-weight: bold; } /* Error */
-code span.ex { } /* Extension */
-code span.fl { color: #40a070; } /* Float */
-code span.fu { color: #06287e; } /* Function */
-code span.im { color: #008000; font-weight: bold; } /* Import */
-code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
-code span.kw { color: #007020; font-weight: bold; } /* Keyword */
-code span.op { color: #666666; } /* Operator */
-code span.ot { color: #007020; } /* Other */
-code span.pp { color: #bc7a00; } /* Preprocessor */
-code span.sc { color: #4070a0; } /* SpecialChar */
-code span.ss { color: #bb6688; } /* SpecialString */
-code span.st { color: #4070a0; } /* String */
-code span.va { color: #19177c; } /* Variable */
-code span.vs { color: #4070a0; } /* VerbatimString */
-code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
 </style>
 
 
@@ -209,7 +146,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./08_exp.html" class="sidebar-item-text sidebar-link">08_exp.html</a>
+  <a href="./exp.html" class="sidebar-item-text sidebar-link">Experiment</a>
   </div>
 </li>
         <li class="sidebar-item">
@@ -227,7 +164,18 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </nav>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#diffusiondistance" id="toc-diffusiondistance" class="nav-link active" data-scroll-target="#diffusiondistance">DiffusionDistance</a></li>
+  <li><a href="#diffusionaffinity" id="toc-diffusionaffinity" class="nav-link" data-scroll-target="#diffusionaffinity">DiffusionAffinity</a></li>
+  <li><a href="#diffusionmap" id="toc-diffusionmap" class="nav-link" data-scroll-target="#diffusionmap">DiffusionMap</a></li>
+  <li><a href="#phatedistance" id="toc-phatedistance" class="nav-link" data-scroll-target="#phatedistance">PhateDistance</a></li>
+  <li><a href="#old_diffusiondistance" id="toc-old_diffusiondistance" class="nav-link" data-scroll-target="#old_diffusiondistance">old_DiffusionDistance</a></li>
+  <li><a href="#setup_distance" id="toc-setup_distance" class="nav-link" data-scroll-target="#setup_distance">setup_distance</a></li>
+  </ul>
+<div class="toc-actions"><div><i class="bi bi-github"></i></div><div class="action-links"><p><a href="https://github.com/KrishnaswamyLab/MIOFlow/tree/main/issues/new" class="toc-action">Report an issue</a></p></div></div></nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
@@ -254,282 +202,64 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </header>
 
 <!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#default_exp geo</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">#hide</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> nbdev.showdoc <span class="im">import</span> <span class="op">*</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">#export</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> graphtools</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.sparse <span class="im">import</span> csr_matrix</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics.pairwise <span class="im">import</span> pairwise_distances</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> DiffusionDistance:</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co">    class DiffusionDistance        </span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co">        X (np.array) data </span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co">        t_max (int), 2^t_max is the max scale of the Diffusion kernel</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co">        knn (int) = 5 number of neighbors for the KNN in the alpha decay kernel construction, same default as in PHATE</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co">        Anisotropy (int): the alpha in Coifman Lafon 2006, 1: double normalization 0: usual random walk</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co">        log (bool) log(P) or not</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co">        normalize (bool) min-max normalization of the distance matrix</span></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co">        phate (bool) is PHATE op if true (should be the same as graphtool)</span></span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="co">        </span></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>   </span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, t_max<span class="op">=</span><span class="dv">5</span>, knn<span class="op">=</span><span class="dv">5</span>, anisotropy<span class="op">=</span><span class="dv">1</span>, log<span class="op">=</span><span class="va">False</span>, normalize<span class="op">=</span><span class="va">False</span>, symmetrize<span class="op">=</span><span class="va">False</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.t_max <span class="op">=</span> t_max</span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.knn <span class="op">=</span> knn</span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.aniso <span class="op">=</span> anisotropy</span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.log <span class="op">=</span> log</span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.normalize <span class="op">=</span> normalize</span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.symmetrize <span class="op">=</span> symmetrize</span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.K <span class="op">=</span> <span class="va">None</span></span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.P <span class="op">=</span> <span class="va">None</span></span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.pi <span class="op">=</span> <span class="va">None</span></span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.G <span class="op">=</span> <span class="va">None</span>    </span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>            </span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> compute_stationnary_distrib(<span class="va">self</span>): </span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>        pi <span class="op">=</span> np.<span class="bu">sum</span>(<span class="va">self</span>.K, axis <span class="op">=</span> <span class="dv">1</span>)</span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.pi <span class="op">=</span> pi<span class="op">/</span>np.<span class="bu">sum</span>(pi)</span>
-<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.pi</span>
-<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> compute_custom_diffusion_distance(<span class="va">self</span>): </span>
-<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>        P <span class="op">=</span> <span class="va">self</span>.P</span>
-<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>        P_d <span class="op">=</span> P <span class="cf">if</span> <span class="kw">not</span> <span class="va">self</span>.log <span class="cf">else</span> csr_matrix((np.log(P.data),P.indices,P.indptr), shape<span class="op">=</span>P.shape)</span>
-<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>        G <span class="op">=</span> pairwise_distances(P_d,P_d,metric<span class="op">=</span><span class="st">'l1'</span>,n_jobs<span class="op">=-</span><span class="dv">1</span>)</span>
-<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>                </span>
-<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> t <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>,<span class="va">self</span>.t_max): </span>
-<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>            P <span class="op">=</span> P <span class="op">@</span> P </span>
-<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="va">self</span>.log<span class="op">==</span><span class="va">True</span>:</span>
-<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>                dist <span class="op">=</span> pairwise_distances(P,P,metric<span class="op">=</span><span class="st">'l1'</span>,n_jobs<span class="op">=-</span><span class="dv">1</span>)</span>
-<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>                np.fill_diagonal(dist,<span class="dv">1</span>)</span>
-<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>                dist <span class="op">=</span> (<span class="op">-</span><span class="dv">1</span>)<span class="op">*</span>np.log(dist)</span>
-<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
-<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>                dist <span class="op">=</span> pairwise_distances(P_d,P_d,metric<span class="op">=</span><span class="st">'l1'</span>,n_jobs<span class="op">=-</span><span class="dv">1</span>)</span>
-<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>            G <span class="op">=</span> G <span class="op">+</span> <span class="dv">2</span><span class="op">**</span>(<span class="op">-</span>t<span class="op">/</span><span class="fl">2.0</span>) <span class="op">*</span> dist</span>
-<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.log<span class="op">==</span><span class="va">True</span>:</span>
-<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>            dist <span class="op">=</span> pairwise_distances(<span class="va">self</span>.pi,<span class="va">self</span>.pi,metric<span class="op">=</span><span class="st">'l1'</span>,n_jobs<span class="op">=-</span><span class="dv">1</span>)</span>
-<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a>            np.fill_diagonal(dist,<span class="dv">1</span>)</span>
-<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>            dist <span class="op">=</span> (<span class="op">-</span><span class="dv">1</span>)<span class="op">*</span>np.log(dist)</span>
-<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
-<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a>            dist <span class="op">=</span> pairwise_distances(<span class="va">self</span>.pi,<span class="va">self</span>.pi,metric<span class="op">=</span><span class="st">'l1'</span>,n_jobs<span class="op">=-</span><span class="dv">1</span>)     </span>
-<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a>        G <span class="op">=</span> G <span class="op">+</span> <span class="dv">2</span><span class="op">**</span>(<span class="op">-</span>(<span class="va">self</span>.t_max<span class="op">+</span><span class="dv">1</span>)<span class="op">/</span><span class="fl">2.0</span>) <span class="op">*</span> dist</span>
-<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.G <span class="op">=</span> G <span class="cf">if</span> <span class="kw">not</span> <span class="va">self</span>.normalize <span class="cf">else</span> (G <span class="op">-</span> np.<span class="bu">min</span>(G))<span class="op">/</span>(np.<span class="bu">max</span>(G)<span class="op">-</span>np.<span class="bu">min</span>(G))</span>
-<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.G</span>
-<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> fit(<span class="va">self</span>, X):</span>
-<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a>        graph <span class="op">=</span> graphtools.Graph(X, knn<span class="op">=</span><span class="va">self</span>.knn,anisotropy<span class="op">=</span><span class="va">self</span>.aniso)</span>
-<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.K <span class="op">=</span> graph.K</span>
-<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.P <span class="op">=</span> graph.diff_op </span>
-<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.compute_stationnary_distrib()</span>
-<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.compute_custom_diffusion_distance()       </span>
-<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.G <span class="cf">if</span> <span class="kw">not</span> <span class="va">self</span>.symmetrize <span class="cf">else</span> (<span class="va">self</span>.G <span class="op">+</span> np.transpose(<span class="va">self</span>.G))<span class="op">/</span><span class="fl">0.5</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">#export</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> phate</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.sparse <span class="im">import</span> csr_matrix</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.sparse.linalg <span class="im">import</span> eigs</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sklearn</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> graphtools</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> DiffusionAffinity:</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co">    class DiffusionAffinity        </span></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co">        X (np.array) data </span></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co">        t_max (int), 2^t_max is the max scale of the Diffusion kernel</span></span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="co">        knn (int) = 5 number of neighbors for the KNN in the alpha decay kernel construction, same default as in PHATE</span></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="co">        Anisotropy (int): the alpha in Coifman Lafon 2006, 1: double normalization 0: usual random walk</span></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co">        t_diff (int) the power of the diffusion affinity matrix</span></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="co">        topeig (int) in the the top k eigenvalues to consider in the spectral decomposition</span></span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="co">        </span></span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="co">        return the l2 between the row of the affinity matrix A^t</span></span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>   </span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, knn<span class="op">=</span><span class="dv">5</span>, anisotropy<span class="op">=</span><span class="dv">0</span>, t_diff<span class="op">=</span><span class="dv">1</span>, topeig<span class="op">=</span><span class="dv">100</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.knn <span class="op">=</span> knn</span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.aniso <span class="op">=</span> anisotropy</span>
-<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.t_diff <span class="op">=</span> t_diff</span>
-<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.topeig <span class="op">=</span> topeig</span>
-<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.A <span class="op">=</span> <span class="va">None</span></span>
-<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.G <span class="op">=</span> <span class="va">None</span>    </span>
-<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> fit(<span class="va">self</span>, X):</span>
-<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.graph <span class="op">=</span> graphtools.Graph(X, knn<span class="op">=</span><span class="va">self</span>.knn,anisotropy<span class="op">=</span><span class="va">self</span>.aniso) </span>
-<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.A <span class="op">=</span> <span class="va">self</span>.graph.diff_aff</span>
-<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.t_diff <span class="op">==</span><span class="dv">1</span>:</span>
-<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.G <span class="op">=</span> sklearn.metrics.pairwise.pairwise_distances(<span class="va">self</span>.A,<span class="va">self</span>.A,metric<span class="op">=</span><span class="st">'l2'</span>,n_jobs<span class="op">=-</span><span class="dv">1</span>)</span>
-<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
-<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>            k <span class="op">=</span> <span class="va">self</span>.topeig <span class="cf">if</span> <span class="va">self</span>.topeig <span class="op">&lt;</span> X.shape[<span class="dv">0</span>] <span class="cf">else</span> X.shape[<span class="dv">0</span>]<span class="op">-</span><span class="dv">2</span></span>
-<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>            w, v <span class="op">=</span> eigs(<span class="va">self</span>.A,k<span class="op">=</span>k, which<span class="op">=</span><span class="st">'LR'</span>)</span>
-<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>            W <span class="op">=</span> np.diag(w)</span>
-<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>            A_t <span class="op">=</span> np.real(v <span class="op">@</span> (W<span class="op">**</span><span class="va">self</span>.t_diff) <span class="op">@</span> v.T)</span>
-<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.G <span class="op">=</span> sklearn.metrics.pairwise.pairwise_distances(A_t,A_t,metric<span class="op">=</span><span class="st">'l2'</span>,n_jobs<span class="op">=-</span><span class="dv">1</span>)</span>
-<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.G</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">#export</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> scipy</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> graphtools</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> DiffusionMap:</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co">    class DiffusionMap        </span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co">        X (np.array) data </span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="co">        t_max (int), 2^t_max is the max scale of the Diffusion kernel</span></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co">        knn (int) = 5 number of neighbors for the KNN in the alpha decay kernel construction, same default as in PHATE</span></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co">        Anisotropy (int): the alpha in Coifman Lafon 2006, 1: double normalization 0: usual random walk</span></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="co">        t_diff (int) the power of the diffusion affinity matrix</span></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="co">        topeig (int) in the the top k eigenvalues to consider in the spectral decomposition</span></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co">        n_emb (int) the dimension of the emb space</span></span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="co">        </span></span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="co">        return the pairwise dist. in the diffusion map embedding space</span></span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="co">        </span></span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>   </span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, knn<span class="op">=</span><span class="dv">5</span>, anisotropy<span class="op">=</span><span class="dv">0</span>, t_diff<span class="op">=</span><span class="dv">1</span>, topeig<span class="op">=</span><span class="dv">100</span>, n_emb<span class="op">=</span><span class="dv">10</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.knn <span class="op">=</span> knn</span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.aniso <span class="op">=</span> anisotropy</span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.t_diff <span class="op">=</span> t_diff</span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.topeig <span class="op">=</span> topeig</span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.n_emb <span class="op">=</span> n_emb</span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.A <span class="op">=</span> <span class="va">None</span></span>
-<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.G <span class="op">=</span> <span class="va">None</span>    </span>
-<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> fit(<span class="va">self</span>, X):</span>
-<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.graph <span class="op">=</span> graphtools.Graph(X, knn<span class="op">=</span><span class="va">self</span>.knn,anisotropy<span class="op">=</span><span class="va">self</span>.aniso) </span>
-<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.A <span class="op">=</span> <span class="va">self</span>.graph.diff_aff</span>
-<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>        k <span class="op">=</span> <span class="va">self</span>.topeig <span class="cf">if</span> <span class="va">self</span>.topeig <span class="op">&lt;</span> X.shape[<span class="dv">0</span>] <span class="cf">else</span> X.shape[<span class="dv">0</span>]<span class="op">-</span><span class="dv">2</span></span>
-<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>        w, v <span class="op">=</span> eigs(<span class="va">self</span>.A,k<span class="op">=</span>k, which<span class="op">=</span><span class="st">'LR'</span>)</span>
-<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>        w, v <span class="op">=</span> np.real(w), np.real(v)</span>
-<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>        v <span class="op">=</span> v<span class="op">/</span>v[:,<span class="dv">0</span>,<span class="va">None</span>]</span>
-<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.emb <span class="op">=</span> np.vstack([(w[i]<span class="op">**</span><span class="va">self</span>.t_diff)<span class="op">*</span>v[:,i] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>,<span class="va">self</span>.n_emb<span class="op">+</span><span class="dv">1</span>)])</span>
-<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.G <span class="op">=</span> scipy.spatial.distance.pdist(<span class="va">self</span>.emb.T)</span>
-<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.G</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">#export </span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics.pairwise <span class="im">import</span> pairwise_distances</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> phate</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PhateDistance:</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co">    class PhateDistance     </span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co">        X (np.array) data </span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co">        knn (int) = 5 number of neighbors for the KNN in the alpha decay kernel construction, same default as in PHATE</span></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co">        Anisotropy (int): the alpha in Coifman Lafon 2006, 1: double normalization 0: usual random walk</span></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="co">        verbose (bool): verbose param. in PHATE</span></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="co">        </span></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co">        return PHATE distance the L2 between Potential of Heat-diffusion</span></span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>   </span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, knn<span class="op">=</span><span class="dv">5</span>, anisotropy<span class="op">=</span><span class="dv">0</span>,verbose<span class="op">=</span><span class="va">False</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.knn <span class="op">=</span> knn</span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.aniso <span class="op">=</span> anisotropy</span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.verbose <span class="op">=</span> verbose</span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> fit(<span class="va">self</span>, X):</span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>        graph <span class="op">=</span> phate.PHATE(knn<span class="op">=</span><span class="va">self</span>.knn, verbose<span class="op">=</span><span class="va">self</span>.verbose, n_landmark<span class="op">=</span>X.shape[<span class="dv">0</span>]).fit(X)</span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.diff_pot <span class="op">=</span> graph.diff_potential </span>
-<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.G <span class="op">=</span> pairwise_distances(<span class="va">self</span>.diff_pot,<span class="va">self</span>.diff_pot,metric<span class="op">=</span><span class="st">'l2'</span>,n_jobs<span class="op">=-</span><span class="dv">1</span>)</span>
-<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.G</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">#export </span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.spatial <span class="im">import</span> distance_matrix</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="co">"""</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co">class DiffusionDistance</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co">    </span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co">    kernel</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="co">    X</span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="co">    t_max</span></span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="co">    stationnary_distrib</span></span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="co">"""</span></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> old_DiffusionDistance:</span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    kernel <span class="op">=</span> <span class="va">None</span></span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    X <span class="op">=</span> <span class="va">None</span></span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    t_max <span class="op">=</span> <span class="va">None</span></span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    M <span class="op">=</span> <span class="va">None</span></span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    P <span class="op">=</span> <span class="va">None</span></span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>    pi <span class="op">=</span> <span class="va">None</span></span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    G <span class="op">=</span> <span class="va">None</span></span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, kernel, t_max) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.kernel<span class="op">=</span> kernel</span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.t_max <span class="op">=</span> t_max</span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>     </span>
-<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> compute_density_norm_matrix(<span class="va">self</span>):</span>
-<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>        K <span class="op">=</span> <span class="va">self</span>.kernel(<span class="va">self</span>.X)</span>
-<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>        Q <span class="op">=</span> np.diag(np.<span class="bu">sum</span>(K, axis<span class="op">=</span> <span class="dv">1</span>))</span>
-<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.M <span class="op">=</span> np.linalg.inv(Q).dot(K).dot(np.linalg.inv(Q))</span>
-<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.M</span>
-<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> compute_diffusion_Matrix(<span class="va">self</span>): </span>
-<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>        D <span class="op">=</span> np.diag(np.<span class="bu">sum</span>(<span class="va">self</span>.M, axis<span class="op">=</span> <span class="dv">1</span>))</span>
-<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.P <span class="op">=</span> np.linalg.inv(D).dot(<span class="va">self</span>.M)</span>
-<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.P</span>
-<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> compute_stationnary_distrib(<span class="va">self</span>): </span>
-<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>        pi <span class="op">=</span> np.<span class="bu">sum</span>(<span class="va">self</span>.M, axis <span class="op">=</span> <span class="dv">1</span>)<span class="op">/</span>np.<span class="bu">sum</span>(<span class="va">self</span>.M)</span>
-<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.pi <span class="op">=</span> pi</span>
-<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.pi</span>
-<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> distance_matrix_Pt(<span class="va">self</span>, t): </span>
-<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a>        Pt <span class="op">=</span> np.linalg.matrix_power(<span class="va">self</span>.P, <span class="dv">2</span><span class="op">**</span>(<span class="va">self</span>.t_max<span class="op">-</span>t))</span>
-<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> distance_matrix(Pt,Pt,<span class="dv">1</span>)</span>
-<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> compute_custom_diffusion_distance(<span class="va">self</span>): </span>
-<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a>        G <span class="op">=</span> np.zeros((<span class="va">self</span>.X.shape[<span class="dv">0</span>], <span class="va">self</span>.X.shape[<span class="dv">0</span>]))</span>
-<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a>                </span>
-<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> t <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>,<span class="va">self</span>.t_max): </span>
-<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a>            G <span class="op">=</span> G <span class="op">+</span> <span class="dv">2</span><span class="op">**</span>(<span class="op">-</span>(<span class="va">self</span>.t_max<span class="op">-</span>t)<span class="op">/</span><span class="dv">2</span>) <span class="op">*</span> <span class="va">self</span>.distance_matrix_Pt(t)</span>
-<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a>        G <span class="op">=</span> G <span class="op">+</span> <span class="dv">2</span><span class="op">**</span>(<span class="op">-</span>(<span class="va">self</span>.t_max<span class="op">+</span><span class="dv">1</span>)<span class="op">/</span><span class="dv">2</span>) <span class="op">*</span> distance_matrix(<span class="va">self</span>.pi[:, <span class="va">None</span>],<span class="va">self</span>.pi[:, <span class="va">None</span>],<span class="dv">1</span>)</span>
-<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.G <span class="op">=</span> G</span>
-<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.G</span>
-<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> fit(<span class="va">self</span>, X):</span>
-<span id="cb7-56"><a href="#cb7-56" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.X <span class="op">=</span> X</span>
-<span id="cb7-57"><a href="#cb7-57" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.compute_density_norm_matrix()</span>
-<span id="cb7-58"><a href="#cb7-58" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.compute_diffusion_Matrix()</span>
-<span id="cb7-59"><a href="#cb7-59" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.compute_stationnary_distrib()</span>
-<span id="cb7-60"><a href="#cb7-60" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.compute_custom_diffusion_distance()</span>
-<span id="cb7-61"><a href="#cb7-61" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.G</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">#export </span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.gaussian_process.kernels <span class="im">import</span> RBF</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> setup_distance(</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    distance_type:<span class="bu">str</span><span class="op">=</span><span class="st">'gaussian'</span>,</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    rbf_length_scale:<span class="bu">float</span><span class="op">=</span><span class="fl">0.5</span>, t_max:<span class="bu">int</span><span class="op">=</span><span class="dv">5</span>, knn:<span class="bu">int</span><span class="op">=</span><span class="dv">5</span></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>):</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    _valid_distance_types <span class="op">=</span> <span class="st">'gaussian alpha_decay'</span>.split()</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> distance_type <span class="op">==</span> <span class="st">'gaussian'</span>:</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>        <span class="co"># </span><span class="al">TODO</span><span class="co">: rename / retool old_DiffusionDistance into single</span></span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        <span class="co">#      DiffusionDistance class that "automagically" figures out</span></span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>        <span class="co">#      implementation via input params</span></span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>        dist <span class="op">=</span> old_DiffusionDistance(RBF(rbf_length_scale), t_max<span class="op">=</span>t_max)</span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> distance_type <span class="op">==</span> <span class="st">'alpha_decay'</span>:</span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>        dist <span class="op">=</span> DiffusionDistance(knn<span class="op">=</span>knn, t_max<span class="op">=</span>t_max)</span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">NotImplementedError</span>(</span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f'distance_type=</span><span class="sc">{</span>distance_type<span class="sc">}</span><span class="ss"> is not an implemented distance.</span><span class="ch">\n</span><span class="ss">'</span></span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f'Please see </span><span class="sc">{</span>_valid_distance_types<span class="sc">}</span><span class="ss">'</span></span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> dist</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
+<hr>
+<section id="diffusiondistance" class="level3">
+<h3 class="anchored" data-anchor-id="diffusiondistance">DiffusionDistance</h3>
+<blockquote class="blockquote">
+<pre><code> DiffusionDistance (t_max=5, knn=5, anisotropy=1, log=False,
+                    normalize=False, symmetrize=False)</code></pre>
+</blockquote>
+<p>class DiffusionDistance<br>
+X (np.array) data t_max (int), 2^t_max is the max scale of the Diffusion kernel knn (int) = 5 number of neighbors for the KNN in the alpha decay kernel construction, same default as in PHATE Anisotropy (int): the alpha in Coifman Lafon 2006, 1: double normalization 0: usual random walk log (bool) log(P) or not normalize (bool) min-max normalization of the distance matrix phate (bool) is PHATE op if true (should be the same as graphtool)</p>
+<hr>
+</section>
+<section id="diffusionaffinity" class="level3">
+<h3 class="anchored" data-anchor-id="diffusionaffinity">DiffusionAffinity</h3>
+<blockquote class="blockquote">
+<pre><code> DiffusionAffinity (knn=5, anisotropy=0, t_diff=1, topeig=100)</code></pre>
+</blockquote>
+<p>class DiffusionAffinity<br>
+X (np.array) data t_max (int), 2^t_max is the max scale of the Diffusion kernel knn (int) = 5 number of neighbors for the KNN in the alpha decay kernel construction, same default as in PHATE Anisotropy (int): the alpha in Coifman Lafon 2006, 1: double normalization 0: usual random walk t_diff (int) the power of the diffusion affinity matrix topeig (int) in the the top k eigenvalues to consider in the spectral decomposition</p>
+<p>return the l2 between the row of the affinity matrix A^t</p>
+<hr>
+</section>
+<section id="diffusionmap" class="level3">
+<h3 class="anchored" data-anchor-id="diffusionmap">DiffusionMap</h3>
+<blockquote class="blockquote">
+<pre><code> DiffusionMap (knn=5, anisotropy=0, t_diff=1, topeig=100, n_emb=10)</code></pre>
+</blockquote>
+<p>class DiffusionMap<br>
+X (np.array) data t_max (int), 2^t_max is the max scale of the Diffusion kernel knn (int) = 5 number of neighbors for the KNN in the alpha decay kernel construction, same default as in PHATE Anisotropy (int): the alpha in Coifman Lafon 2006, 1: double normalization 0: usual random walk t_diff (int) the power of the diffusion affinity matrix topeig (int) in the the top k eigenvalues to consider in the spectral decomposition n_emb (int) the dimension of the emb space</p>
+<p>return the pairwise dist. in the diffusion map embedding space</p>
+<hr>
+</section>
+<section id="phatedistance" class="level3">
+<h3 class="anchored" data-anchor-id="phatedistance">PhateDistance</h3>
+<blockquote class="blockquote">
+<pre><code> PhateDistance (knn=5, anisotropy=0, verbose=False)</code></pre>
+</blockquote>
+<p>class PhateDistance<br>
+X (np.array) data knn (int) = 5 number of neighbors for the KNN in the alpha decay kernel construction, same default as in PHATE Anisotropy (int): the alpha in Coifman Lafon 2006, 1: double normalization 0: usual random walk verbose (bool): verbose param. in PHATE</p>
+<p>return PHATE distance the L2 between Potential of Heat-diffusion</p>
+<hr>
+</section>
+<section id="old_diffusiondistance" class="level3">
+<h3 class="anchored" data-anchor-id="old_diffusiondistance">old_DiffusionDistance</h3>
+<blockquote class="blockquote">
+<pre><code> old_DiffusionDistance (kernel, t_max)</code></pre>
+</blockquote>
+<p>Initialize self. See help(type(self)) for accurate signature.</p>
+<hr>
+</section>
+<section id="setup_distance" class="level3">
+<h3 class="anchored" data-anchor-id="setup_distance">setup_distance</h3>
+<blockquote class="blockquote">
+<pre><code> setup_distance (distance_type:str='gaussian', rbf_length_scale:float=0.5,
+                 t_max:int=5, knn:int=5)</code></pre>
+</blockquote>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
