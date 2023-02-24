@@ -36,7 +36,7 @@ class DiffusionDistance:
             
     def compute_stationnary_distrib(self): 
         pi = np.sum(self.K, axis = 1)
-        self.pi = pi/np.sum(pi)
+        self.pi = (pi/np.sum(pi)).reshape(-1,1)
         return self.pi
         
     def compute_custom_diffusion_distance(self): 
@@ -66,8 +66,8 @@ class DiffusionDistance:
 
     def fit(self, X):
         graph = graphtools.Graph(X, knn=self.knn,anisotropy=self.aniso)
-        self.K = graph.K
-        self.P = graph.diff_op 
+        self.K = graph.K.toarray()
+        self.P = graph.diff_op.toarray() 
         self.compute_stationnary_distrib()
         self.compute_custom_diffusion_distance()       
         return self.G if not self.symmetrize else (self.G + np.transpose(self.G))/0.5
@@ -78,7 +78,6 @@ from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import eigs
 import sklearn
 import graphtools
-
 
 class DiffusionAffinity:
     """

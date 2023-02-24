@@ -1,0 +1,26 @@
+# Note if using Conda it is recommended to install torch separately.
+# For most of testing the following commands were run to set up the environment
+# This was tested with torch==1.13.1
+# conda create -n mioflow python=3.10
+# conda activate mioflow
+# conda install pytorch pytorch-cuda=11.6 -c pytorch -c nvidia
+# pip install -r requirements.txt
+# --------- pytorch --------- #
+torch>=1.11.0
+
+# --------- pkg reqs -------- #
+matplotlib
+numpy
+torchdiffeq
+torchsde
+scipy
+scikit-learn
+pot
+phate 
+pyyaml
+tqdm
+
+# --------- notebook reqs -------- #
+seaborn>=0.12.2
+pandas
+ipywidgets

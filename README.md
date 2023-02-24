@@ -5,64 +5,76 @@ MIOFlow
 
 ## Setup
 
-To get all the pagackes required, run the following command:
+Create conda environment
+```bash
+$ conda create -n mioflow python=3.10
+$ conda activate mioflow
+```
+install pytorch according to instructions
+https://pytorch.org/get-started/
 
-``` bash
-$ conda env create -f environment.yml
+we used 
+```bash
+$ conda install pytorch pytorch-cuda=11.6 -c pytorch -c nvidia
+```
+install requirements
+```bash
+$ pip install -r requirements.txt
+```
+Remove unused packages and caches.
+```bash
+$ conda clean --all
 ```
 
-This will create a new conda environment `sklab-mioflow`, which can be
-activated via:
-
-    conda activate sklab-mioflow
+Install MIOFlow for developers and internal use:
+```
+cd path/to/this/repository
+pip install -e MIOFlow
+```
 
 ### Add kernel to Jupyter Notebook
 
 #### automatic conda kernels
+For greater detail see the official docs for [`nb_conda_kernels`][nb_conda_kernels].
+In short, install `nb_conda_kernels` in the environment from which you launch JupyterLab / Jupyter Notebooks from (e.g. `base`) via:
 
-For greater detail see the official docs for
-[`nb_conda_kernels`](https://github.com/Anaconda-Platform/nb_conda_kernels).
-In short, install `nb_conda_kernels` in the environment from which you
-launch JupyterLab / Jupyter Notebooks from (e.g. `base`) via:
-
-``` bash
+```bash
 $ conda install -n <notebook_env> nb_conda_kernels
 ```
 
-to add a new or exist conda environment to Jupyter simply install
-`ipykernel` into that conda environment e.g.
+to add a new or exist conda environment to Jupyter simply install `ipykernel` into that conda environment e.g.
 
-``` bash
+```bash
 $ conda install -n <python_env> ipykernel
 ```
 
-#### manual ipykernel
 
+#### manual ipykernel
 add to your Jupyter Notebook kernels via
 
-``` bash
+```bash
 $ python -m ipykernel install --user --name sklab-mioflow
 ```
 
 It can be removed via:
 
-``` bash
+```bash
 $ jupyter kernelspec uninstall sklab-mioflow
 ```
 
 #### list kernels found by Jupyter
 
 kernels recognized by conda
-
-``` bash
+```bash
 $ python -m nb_conda_kernels list
 ```
 
 check which kernels are discovered by Jupyter:
-
-``` bash
+```bash
 $ jupyter kernelspec list
 ```
+
+[nb_conda_kernels]: https://github.com/Anaconda-Platform/nb_conda_kernels
 
 ## Install
 
