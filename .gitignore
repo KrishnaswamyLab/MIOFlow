@@ -25,3 +25,4 @@ __pycache__/
 
 results/**
 .last_checked
+*.sw?
