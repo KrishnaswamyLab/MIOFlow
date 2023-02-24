@@ -1,5 +1,5 @@
-from configparser import ConfigParser
 import os
+from configparser import ConfigParser
 
 import setuptools
 from pkg_resources import parse_version
@@ -49,7 +49,22 @@ statuses = [
 ]
 py_versions = "3.6 3.7 3.8 3.9 3.10".split()
 
-requirements = cfg.get("requirements", "").split()
+requirements = [
+    "torch>=1.11.0",
+    "matplotlib",
+    "numpy",
+    "torchdiffeq",
+    "torchsde",
+    "scipy",
+    "scikit-learn",
+    "pot",
+    "phate",
+    "pyyaml",
+    "tqdm",
+    "seaborn>=0.12.2",
+    "pandas",
+    "ipywidgets",
+]
 min_python = cfg["min_python"]
 lic = licenses.get(cfg["license"].lower(), (cfg["license"], None))
 
@@ -72,7 +87,7 @@ setuptools.setup(
     install_requires=requirements,
     dependency_links=cfg.get("dep_links", "").split(),
     python_requires=">=" + cfg["min_python"],
-    long_description=open("README.md").read(),
+    long_description=open(os.path.join(here, "README.md")).read(),
     long_description_content_type="text/markdown",
     zip_safe=False,
     entry_points={"console_scripts": cfg.get("console_scripts", "").split()},
