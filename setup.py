@@ -23,9 +23,22 @@ licenses = {
 statuses = [ '1 - Planning', '2 - Pre-Alpha', '3 - Alpha',
     '4 - Beta', '5 - Production/Stable', '6 - Mature', '7 - Inactive' ]
 py_versions = '3.6 3.7 3.8 3.9 3.10'.split()
-
-requirements = shlex.split(cfg.get('requirements', ''))
-if cfg.get('pip_requirements'): requirements += shlex.split(cfg.get('pip_requirements', ''))
+requirements = [
+     "torch>=1.11.0",
+     "matplotlib",
+     "numpy",
+     "torchdiffeq",
+     "torchsde",
+     "scipy",
+     "scikit-learn",
+     "pot",
+     "phate",
+     "pyyaml",
+     "tqdm",
+     "seaborn>=0.12.2",
+     "pandas",
+     "ipywidgets",
+ ]
 min_python = cfg['min_python']
 lic = licenses.get(cfg['license'].lower(), (cfg['license'], None))
 dev_requirements = (cfg.get('dev_requirements') or '').split()
