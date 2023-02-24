@@ -1,4 +1,5 @@
 from configparser import ConfigParser
+import os
 
 import setuptools
 from pkg_resources import parse_version
@@ -6,9 +7,11 @@ from pkg_resources import parse_version
 assert parse_version(setuptools.__version__) >= parse_version("36.2")
 
 # note: all settings are in settings.ini; edit there, not here
+here = os.path.abspath(os.path.dirname(__file__))
 config = ConfigParser()
-config.read("settings.ini")
+config.read(os.path.join(here, "settings.ini"))
 cfg = dict(config["DEFAULT"])
+print(here, cfg)
 
 cfg_keys = "version description keywords author author_email".split()
 expected = (
