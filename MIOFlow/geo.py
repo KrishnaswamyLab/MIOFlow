@@ -119,7 +119,8 @@ import graphtools
 
 class DiffusionMap:
     """
-    class DiffusionMap        
+    Arguments
+    ---------     
         X (np.array) data 
         t_max (int), 2^t_max is the max scale of the Diffusion kernel
         knn (int) = 5 number of neighbors for the KNN in the alpha decay kernel construction, same default as in PHATE
@@ -128,8 +129,10 @@ class DiffusionMap:
         topeig (int) in the the top k eigenvalues to consider in the spectral decomposition
         n_emb (int) the dimension of the emb space
         
-        return the pairwise dist. in the diffusion map embedding space
-        
+    Returns
+    ------- 
+        np.array 
+            The pairwise dist. in the diffusion map embedding.
     """
    
     def __init__(self, knn=5, anisotropy=0, t_diff=1, topeig=100, n_emb=10) -> None:
@@ -153,18 +156,19 @@ class DiffusionMap:
         return self.G
 
 # %% ../nbs/09_geo.ipynb 6
-from sklearn.metrics.pairwise import pairwise_distances
+from scipy.spatial.distance import pdist, squareform
 import phate
 
 class PhateDistance:
     """
-    class PhateDistance     
+    class
+    -----
+        Arguments
+        ---------
         X (np.array) data 
         knn (int) = 5 number of neighbors for the KNN in the alpha decay kernel construction, same default as in PHATE
         Anisotropy (int): the alpha in Coifman Lafon 2006, 1: double normalization 0: usual random walk
-        verbose (bool): verbose param. in PHATE
-        
-        return PHATE distance the L2 between Potential of Heat-diffusion
+        verbose (bool): verbose param. in PHATE.
     """
    
     def __init__(self, knn=5, anisotropy=0,verbose=False) -> None:
@@ -172,13 +176,24 @@ class PhateDistance:
         self.aniso = anisotropy
         self.verbose = verbose
         
-    def fit(self, X):
+    def fit(self, X # Dataset to fit.
+            ):
+        """
+        Parameters
+        ----------
+            X: (np.array) Dataset to fit. 
+        
+        Returns
+        -------
+        np.array
+            the L2 between Potential of Heat-diffusion
+        """
         graph = phate.PHATE(knn=self.knn, verbose=self.verbose, n_landmark=X.shape[0]).fit(X)
-        self.diff_pot = graph.diff_potential 
-        self.G = pairwise_distances(self.diff_pot,self.diff_pot,metric='l2',n_jobs=-1)
+        diff_pot = graph.diff_potential 
+        self.G = squareform(pdist(diff_pot))
         return self.G
 
-# %% ../nbs/09_geo.ipynb 7
+# %% ../nbs/09_geo.ipynb 8
 import numpy as np
 from scipy.spatial import distance_matrix
 
@@ -240,14 +255,14 @@ class old_DiffusionDistance:
         self.compute_custom_diffusion_distance()
         return self.G
 
-# %% ../nbs/09_geo.ipynb 8
+# %% ../nbs/09_geo.ipynb 9
 from sklearn.gaussian_process.kernels import RBF
 
 def setup_distance(
     distance_type:str='gaussian',
-    rbf_length_scale:float=0.5, t_max:int=5, knn:int=5
+    rbf_length_scale:float=0.5, t_max:int=5, knn:int=5, anisotropy:int=1,
 ):
-    _valid_distance_types = 'gaussian alpha_decay'.split()
+    _valid_distance_types = 'gaussian alpha_decay phate'.split()
     
     if distance_type == 'gaussian':
         # TODO: rename / retool old_DiffusionDistance into single
@@ -256,6 +271,10 @@ def setup_distance(
         dist = old_DiffusionDistance(RBF(rbf_length_scale), t_max=t_max)
     elif distance_type == 'alpha_decay':
         dist = DiffusionDistance(knn=knn, t_max=t_max)
+
+    elif distance_type == 'phate':
+        dist = PhateDistance(knn=knn, anisotropy=anisotropy)
+
     else:
         raise NotImplementedError(
             f'distance_type={distance_type} is not an implemented distance.\n'
