@@ -5,16 +5,38 @@ MIOFlow
 
 ## Setup
 
-To get all the pagackes required, run the following command:
+Create conda environment
 
 ``` bash
-$ conda env create -f environment.yml
+$ conda create -n mioflow python=3.10
+$ conda activate mioflow
 ```
 
-This will create a new conda environment `sklab-mioflow`, which can be
-activated via:
+install pytorch according to instructions
+https://pytorch.org/get-started/
 
-    conda activate sklab-mioflow
+we used
+
+``` bash
+$ conda install pytorch pytorch-cuda=11.6 -c pytorch -c nvidia
+```
+
+install requirements and MIOFlow
+
+``` bash
+$ pip install -e .
+```
+
+Remove unused packages and caches.
+
+``` bash
+$ conda clean --all
+```
+
+Install MIOFlow for developers and internal use:
+
+    cd path/to/this/repository
+    pip install -e MIOFlow
 
 ### Add kernel to Jupyter Notebook
 

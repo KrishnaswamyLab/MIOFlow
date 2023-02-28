@@ -1,0 +1,15 @@
+website:
+  sidebar:
+    contents:
+      - index.ipynb
+      - 00_ode.ipynb
+      - 01_losses.ipynb
+      - 02_utils.ipynb
+      - 03_models.ipynb
+      - 04_plots.ipynb
+      - 05_train.ipynb
+      - 06_constants.ipynb
+      - 07_datasets.ipynb
+      - 08_exp.ipynb
+      - 09_geo.ipynb
+      - 10_eval.ipynb
