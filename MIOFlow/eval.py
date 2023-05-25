@@ -33,7 +33,7 @@ def generate_points(
         generated (float[float[]]): a list with shape `(len(sample_time), n_points, len(df.columns) - 1)`
             of the generated points.
     '''
-    to_torch = True if use_cuda else False
+    to_torch = True #if use_cuda else False
 
     groups = sorted(df[samples_key].unique())
     if sample_time is None:
@@ -43,6 +43,7 @@ def generate_points(
         replace=sample_with_replacement, to_torch=to_torch, use_cuda=use_cuda
     )
     if autoencoder is not None and recon:
+        data_t0 = torch.Tensor(data_t0).float()
         data_t0 = autoencoder.encoder(data_t0)
         
     time =  torch.Tensor(sample_time).cuda() if use_cuda else torch.Tensor(sample_time)
