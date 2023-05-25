@@ -63,7 +63,7 @@ class OT_loss(nn.Module):
             self.fn = lambda m, n, M : ot.unbalanced.sinkhorn_knopp_unbalanced(m, n, M, 1.0, 1.0)
         else:
             pass
-        self.use_cuda=True
+        self.use_cuda=use_cuda
 
     def __call__(self, source, target, use_cuda=None):
         if use_cuda is None:
