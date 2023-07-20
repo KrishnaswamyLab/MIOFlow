@@ -198,6 +198,7 @@ def train(
 
                 if use_density_loss:                
                     density_loss = density_fn(data_tp, data_t1, top_k=top_k)
+                    density_loss = density_loss.to(loss.device)
                     loss += lambda_density * density_loss
 
                 if use_penalty:
@@ -273,6 +274,7 @@ def train(
 
             if use_density_loss:                
                 density_loss = density_fn(data_tp, data_ti, groups, to_ignore, top_k)
+                density_loss = density_loss.to(loss.device)
                 loss += lambda_density * density_loss
 
             if use_penalty:

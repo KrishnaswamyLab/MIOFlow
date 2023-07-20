@@ -77,6 +77,7 @@ class OT_loss(nn.Module):
         elif type(pi) is torch.Tensor:
             pi = pi.clone().detach()
         pi = pi.cuda() if use_cuda else pi
+        M = M.to(pi.device)
         loss = torch.sum(pi * M)
         return loss
 
