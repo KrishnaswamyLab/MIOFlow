@@ -14,7 +14,8 @@ from tqdm.notebook import tqdm
 import torch
 
 from .utils import sample, generate_steps
-from .losses import MMD_loss, OT_loss, Density_loss, Local_density_loss
+from .losses import MMD_loss, OT_loss, Density_loss, Local_density_loss, density_specified_OT_loss
+from .models import GrowthRateModel
 
 def train(
     model, df, groups, optimizer, n_batches=20, 
@@ -51,7 +52,7 @@ def train(
     use_penalty=False,
     lambda_energy=1.0,
 
-    reverse:bool = False
+    reverse:bool = False,
 ):
 
     '''
@@ -160,6 +161,12 @@ def train(
     if use_cuda:
         model = model.cuda()
     
+    if isinstance(model, GrowthRateModel):
+        growth_rate = True
+        assert isinstance(criterion, density_specified_OT_loss), 'Criterion must be density_specified_OT_loss when using growth_rate=True'
+    else:
+        growth_rate = False
+
     model.train()
     
     for batch in tqdm(range(n_batches)):
@@ -189,15 +196,24 @@ def train(
                     data_t0 = autoencoder.encoder(data_t0)
                     data_t1 = autoencoder.encoder(data_t1)
                 # prediction
-                data_tp = model(data_t0, time)
+                if growth_rate:
+                    data_tp, m_tp = model(data_t0, time)
+                else:
+                    data_tp = model(data_t0, time)
 
                 if autoencoder is not None and use_emb:        
                     data_tp, data_t1 = autoencoder.encoder(data_tp), autoencoder.encoder(data_t1)
                 # loss between prediction and sample t1
-                loss = criterion(data_tp, data_t1)
+                if growth_rate:
+                    loss = criterion(data_tp, data_t1, m_tp)
+                else:
+                    loss = criterion(data_tp, data_t1)
 
-                if use_density_loss:                
-                    density_loss = density_fn(data_tp, data_t1, top_k=top_k)
+                if use_density_loss: 
+                    if growth_rate:
+                        density_loss = density_fn(data_tp, data_t1, pre_softmax_weights=m_tp.detach(), top_k=top_k)
+                    else:               
+                        density_loss = density_fn(data_tp, data_t1, top_k=top_k)
                     density_loss = density_loss.to(loss.device)
                     loss += lambda_density * density_loss
 
@@ -250,7 +266,10 @@ def train(
             if autoencoder is not None and use_gae:
                 data_ti = [autoencoder.encoder(data) for data in data_ti]
             # prediction
-            data_tp = model(data_ti[0], time, return_whole_sequence=True)
+            if growth_rate:
+                data_tp, m_tp = model(data_ti[0], time, return_whole_sequence=True)
+            else:
+                data_tp = model(data_ti[0], time, return_whole_sequence=True)
             if autoencoder is not None and use_emb:        
                 data_tp = [autoencoder.encoder(data) for data in data_tp]
                 data_ti = [autoencoder.encoder(data) for data in data_ti]
@@ -266,14 +285,24 @@ def train(
             else:
                 pass
 
-            loss = sum([
-                criterion(data_tp[i], data_ti[i]) 
-                for i in range(1, len(groups))
-                if groups[i] != to_ignore
-            ])
+            if growth_rate:
+                loss = sum([
+                    criterion(data_tp[i], data_ti[i], m_tp[i]) 
+                    for i in range(1, len(groups))
+                    if groups[i] != to_ignore
+                ])
+            else:
+                loss = sum([
+                    criterion(data_tp[i], data_ti[i]) 
+                    for i in range(1, len(groups))
+                    if groups[i] != to_ignore
+                ])
 
             if use_density_loss:                
-                density_loss = density_fn(data_tp, data_ti, groups, to_ignore, top_k)
+                if growth_rate:
+                    density_loss = density_fn(data_tp, data_t1, groups, to_ignore, top_k, pre_softmax_weights=m_tp.detach())
+                else:               
+                    density_loss = density_fn(data_tp, data_ti, groups, to_ignore, top_k)
                 density_loss = density_loss.to(loss.device)
                 loss += lambda_density * density_loss
 
@@ -437,7 +466,7 @@ def training_regimen(
     steps=None, plot_every=None,
     n_points=100, n_trajectories=100, n_bins=100, 
     local_losses=None, batch_losses=None, globe_losses=None,
-    reverse_schema=True, reverse_n=4
+    reverse_schema=True, reverse_n=4,
 ):
     recon = use_gae and not use_emb
     if steps is None:
@@ -479,7 +508,7 @@ def training_regimen(
             autoencoder = autoencoder, use_emb = use_emb, use_gae = use_gae, sample_size=sample_size, 
             sample_with_replacement=sample_with_replacement, logger=logger,
             add_noise=add_noise, noise_scale=noise_scale, use_gaussian=use_gaussian, 
-            use_penalty=use_penalty, lambda_energy=lambda_energy, reverse=reverse
+            use_penalty=use_penalty, lambda_energy=lambda_energy, reverse=reverse,
         )
         for k, v in l_loss.items():  
             local_losses[k].extend(v)
@@ -513,7 +542,7 @@ def training_regimen(
             autoencoder = autoencoder, use_emb = use_emb, use_gae = use_gae, sample_size=sample_size, 
             sample_with_replacement=sample_with_replacement, logger=logger, 
             add_noise=add_noise, noise_scale=noise_scale, use_gaussian=use_gaussian,
-            use_penalty=use_penalty, lambda_energy=lambda_energy, reverse=reverse
+            use_penalty=use_penalty, lambda_energy=lambda_energy, reverse=reverse,
         )
         for k, v in l_loss.items():  
             local_losses[k].extend(v)
@@ -548,7 +577,7 @@ def training_regimen(
             autoencoder = autoencoder, use_emb = use_emb, use_gae = use_gae, sample_size=sample_size, 
             sample_with_replacement=sample_with_replacement, logger=logger, 
             add_noise=add_noise, noise_scale=noise_scale, use_gaussian=use_gaussian,
-            use_penalty=use_penalty, lambda_energy=lambda_energy, reverse=reverse
+            use_penalty=use_penalty, lambda_energy=lambda_energy, reverse=reverse,
         )
         for k, v in l_loss.items():  
             local_losses[k].extend(v)

@@ -49,13 +49,15 @@ def config_hold_out(df:pd.DataFrame, hold_out:str='random', hold_one_out:bool=Fa
         raise ValueError(f'group={hold_out} not in known groups {groups}')
     return DF, groups
 
-from .losses import MMD_loss, OT_loss
-def config_criterion(criterion_name:str='ot', use_cuda:bool=False):
+from .losses import MMD_loss, OT_loss, density_specified_OT_loss
+def config_criterion(criterion_name:str='ot', use_cuda:bool=False, **kwargs):
     _valid_criterion_names = 'ot mmd'.split()
     if criterion_name == 'mmd':
         criterion = MMD_loss()
     elif criterion_name == 'ot':
         criterion = OT_loss(use_cuda=use_cuda)
+    elif criterion_name == 'density_specified_ot':
+        criterion = density_specified_OT_loss(**kwargs)
     else:
         raise NotImplementedError(
             f'{criterion_name} not implemented.\n'
