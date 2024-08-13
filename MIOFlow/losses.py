@@ -116,7 +116,7 @@ class density_specified_OT_loss(nn.Module):
         else:
             pass
         if take_softmax:
-            self.softmax = lambda x: nn.functional.softmax(x, dim=0)
+            self.softmax = lambda x: nn.functional.softmax(x, dim=-1)
         else:
             self.softmax = lambda x: x
         self.detach_M_ot = detach_M_ot
