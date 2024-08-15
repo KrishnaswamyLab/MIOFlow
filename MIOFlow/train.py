@@ -14,7 +14,7 @@ from tqdm.notebook import tqdm
 import torch
 
 from .utils import sample, generate_steps
-from .losses import MMD_loss, OT_loss, Density_loss, Local_density_loss, density_specified_OT_loss
+from .losses import MMD_loss, OT_loss, Density_loss, Local_density_loss, density_specified_OT_loss, EnergyLoss, EnergyLossGrowthRate, EnergyLossSeq, EnergyLossGrowthRateSeq
 from .models import GrowthRateModel
 
 def train(
@@ -35,6 +35,7 @@ def train(
     top_k = 5,
     hinge_value = 0.01,
     use_density_loss=True,
+    density_detach_m = True,
     # use_local_density=False,
 
     lambda_density = 1.0,
@@ -53,6 +54,13 @@ def train(
     lambda_energy=1.0,
 
     reverse:bool = False,
+    lambda_m = 0.,
+
+    use_penalty_m = False,
+    lambda_energy_m = 1.0,
+    lambda_ot = 1.0,
+    energy_weighted=True,
+    energy_detach_m=False,
 ):
 
     '''
@@ -130,6 +138,10 @@ def train(
 
         reverse (bool): Whether to train time backwards.
     '''
+
+    """
+    Xingzhi: changed the energy penalty to being computed outside the model.
+    """
     if autoencoder is None and (use_emb or use_gae):
         use_emb = False
         use_gae = False
@@ -156,7 +168,6 @@ def train(
         local_losses = {f'{t0}:{t1}':[] for (t0, t1) in steps}
         
     density_fn = Density_loss(hinge_value) # if not use_local_density else Local_density_loss()
-
     # Send model to cuda and specify it as training mode
     if use_cuda:
         model = model.cuda()
@@ -166,6 +177,19 @@ def train(
         assert isinstance(criterion, density_specified_OT_loss), 'Criterion must be density_specified_OT_loss when using growth_rate=True'
     else:
         growth_rate = False
+
+    # if use_penalty:
+    #     model.use_norm = True
+    
+    # if use_penalty_m:
+    #     model.use_norm_m = True
+
+    energy_loss_growth_rate = EnergyLossGrowthRate(weighted=energy_weighted, detach_m=energy_detach_m)
+    energy_loss_growth_rate_seq = EnergyLossGrowthRateSeq(weighted=energy_weighted, detach_m=energy_detach_m)
+    energy_loss = EnergyLoss()
+    energy_loss_seq = EnergyLossSeq()
+
+    assert use_penalty == False and use_penalty_m == False, 'Use energy penalty instead of norm penalty!'
 
     model.train()
     
@@ -205,27 +229,54 @@ def train(
                     data_tp, data_t1 = autoencoder.encoder(data_tp), autoencoder.encoder(data_t1)
                 # loss between prediction and sample t1
                 if growth_rate:
-                    loss = criterion(data_tp, data_t1, m_tp)
+                    loss = lambda_ot * criterion(data_tp, data_t1, m_tp)
                 else:
-                    loss = criterion(data_tp, data_t1)
+                    loss = lambda_ot * criterion(data_tp, data_t1)
 
                 if use_density_loss: 
                     if growth_rate:
-                        density_loss = density_fn(data_tp, data_t1, pre_softmax_weights=m_tp.detach(), top_k=top_k)
+                        if density_detach_m:
+                            density_loss = density_fn(data_tp, data_t1, pre_softmax_weights=m_tp.detach(), top_k=top_k)
+                        else:
+                            density_loss = density_fn(data_tp, data_t1, pre_softmax_weights=m_tp, top_k=top_k)
                     else:               
                         density_loss = density_fn(data_tp, data_t1, top_k=top_k)
                     density_loss = density_loss.to(loss.device)
                     loss += lambda_density * density_loss
 
-                if use_penalty:
-                    penalty = sum(model.norm)
-                    loss += lambda_energy * penalty
+                # if use_penalty:
+                #     if growth_rate:
+                #         NotImplemented
+                #     else:
+                #         dxdx = model.func(time, data_tp)
+                #     penalty = sum(model.norm)
+                #     loss += lambda_energy * penalty
+                
+                # if use_penalty_m:
+                #     penalty_m = sum(model.norm_m)
+                #     loss += lambda_energy_m * penalty_m
+                
+                if growth_rate and (lambda_energy > 0 or lambda_energy_m > 0):
+                    eloss, emloss = energy_loss_growth_rate(model, data_tp, m_tp, time[-1])
+                    loss += lambda_energy * eloss
+                    loss += lambda_energy_m * emloss
+                elif lambda_energy > 0:
+                    eloss = energy_loss(model, data_tp, time[-1])
+                    loss += lambda_energy * eloss
+
+                if growth_rate and lambda_m > 0:
+                    # now taking the mean over all points, 
+                    # because we allow individual points to be large or small in mass,
+                    # but we want the average to stay the same for stablity.
+                    m_loss = (torch.square(m_tp.mean(axis=-1) - model.m_init)).mean() 
+                    loss += lambda_m * m_loss
 
                 # apply local loss as we calculate it
                 if apply_losses_in_time and local_loss:
                     loss.backward()
                     optimizer.step()
-                    model.norm=[]
+                    # model.norm=[]
+                    # model.norm_m=[]
                 # save loss in storage variables 
                 local_losses[f'{t0}:{t1}'].append(loss.item())
                 batch_loss.append(loss)
@@ -285,35 +336,65 @@ def train(
             else:
                 pass
 
+            non_ignore_idx = [i for i in range(len(groups)) if groups[i] != to_ignore]
+
+            # print("non_ignore_idx", non_ignore_idx)
+
             if growth_rate:
                 loss = sum([
                     criterion(data_tp[i], data_ti[i], m_tp[i]) 
                     for i in range(1, len(groups))
                     if groups[i] != to_ignore
                 ])
+                loss = lambda_ot * loss
             else:
                 loss = sum([
                     criterion(data_tp[i], data_ti[i]) 
                     for i in range(1, len(groups))
                     if groups[i] != to_ignore
                 ])
+                loss = lambda_ot * loss
 
             if use_density_loss:                
                 if growth_rate:
-                    density_loss = density_fn(data_tp, data_t1, groups, to_ignore, top_k, pre_softmax_weights=m_tp.detach())
+                    if density_detach_m:
+                        density_loss = density_fn(data_tp, data_ti, groups, to_ignore, top_k, pre_softmax_weights=m_tp.detach())
+                    else:
+                        density_loss = density_fn(data_tp, data_ti, groups, to_ignore, top_k, pre_softmax_weights=m_tp)
                 else:               
                     density_loss = density_fn(data_tp, data_ti, groups, to_ignore, top_k)
                 density_loss = density_loss.to(loss.device)
                 loss += lambda_density * density_loss
 
-            if use_penalty:
-                penalty = sum([model.norm[-(i+1)] for i in range(1, len(groups))
-                    if groups[i] != to_ignore])
-                loss += lambda_energy * penalty
+            if growth_rate and (lambda_energy > 0 or lambda_energy_m > 0):
+                eloss, emloss = energy_loss_growth_rate_seq(model, data_tp[non_ignore_idx,...], m_tp[non_ignore_idx,...], time[non_ignore_idx,...])
+                loss += lambda_energy * eloss
+                loss += lambda_energy_m * emloss
+            elif lambda_energy > 0:
+                eloss = energy_loss_seq(model, data_tp[non_ignore_idx,...], time[non_ignore_idx,...])
+                loss += lambda_energy * eloss
+
+            # if use_penalty:
+            #     penalty = sum([model.norm[-(i+1)] for i in range(1, len(groups))
+            #         if groups[i] != to_ignore])
+            #     loss += lambda_energy * penalty
+
+            # if use_penalty_m:
+            #     penalty_m = sum([model.norm_m[-(i+1)] for i in range(1, len(groups))
+            #         if groups[i] != to_ignore])
+            #     loss += lambda_energy_m * penalty_m
+
+            if growth_rate and lambda_m > 0:
+                # now taking the mean over all points, 
+                # because we allow individual points to be large or small in mass,
+                # but we want the average to stay the same for stablity.
+                m_loss = (torch.square(m_tp[non_ignore_idx,...].mean(axis=-1) - model.m_init)).mean() 
+                loss += lambda_m * m_loss
                                        
             loss.backward()
             optimizer.step()
             model.norm=[]
+            model.norm_m=[]
 
             globe_losses.append(loss.item())
         elif local_loss and global_loss:
@@ -321,7 +402,10 @@ def train(
             raise NotImplementedError()
         else:
             raise ValueError('A form of loss must be specified.')
-                     
+        # Check for NaN loss
+        if torch.isnan(loss):
+            raise ValueError(f"NaN loss encountered at batch {batch}. Stopping training.")
+             
     print_loss = globe_losses if global_loss else batch_losses 
     if logger is None:      
         tqdm.write(f'Train loss: {np.round(np.mean(print_loss), 5)}')
@@ -450,7 +534,7 @@ def training_regimen(
 
 
     hold_one_out=False, hold_out='random', 
-    hinge_value=0.01, use_density_loss=True, 
+    hinge_value=0.01, use_density_loss=True, density_detach_m=True,
 
     top_k = 5, lambda_density = 1.0, 
     autoencoder=None, use_emb=True, use_gae=False, 
@@ -467,6 +551,14 @@ def training_regimen(
     n_points=100, n_trajectories=100, n_bins=100, 
     local_losses=None, batch_losses=None, globe_losses=None,
     reverse_schema=True, reverse_n=4,
+
+    # additional train params. appeneded instead of inserted in case some code did not specify parameter names.
+    lambda_m = 0.,
+    use_penalty_m = False,
+    lambda_energy_m = 1.0,
+    energy_weighted=True,
+    energy_detach_m=True,
+    lambda_ot = 1.0
 ):
     recon = use_gae and not use_emb
     if steps is None:
@@ -504,11 +596,16 @@ def training_regimen(
             hold_one_out=hold_one_out, hold_out=hold_out, 
             hinge_value=hinge_value,
             use_density_loss = use_density_loss,    
-            top_k = top_k, lambda_density = lambda_density, 
+            top_k = top_k, lambda_density = lambda_density, density_detach_m=density_detach_m,
             autoencoder = autoencoder, use_emb = use_emb, use_gae = use_gae, sample_size=sample_size, 
             sample_with_replacement=sample_with_replacement, logger=logger,
             add_noise=add_noise, noise_scale=noise_scale, use_gaussian=use_gaussian, 
             use_penalty=use_penalty, lambda_energy=lambda_energy, reverse=reverse,
+            lambda_m=lambda_m,
+            use_penalty_m=use_penalty_m, lambda_energy_m=lambda_energy_m,
+            lambda_ot=lambda_ot,
+            energy_weighted=energy_weighted,
+            energy_detach_m=energy_detach_m,
         )
         for k, v in l_loss.items():  
             local_losses[k].extend(v)
@@ -538,11 +635,16 @@ def training_regimen(
             hold_one_out=hold_one_out, hold_out=hold_out, 
             hinge_value=hinge_value,
             use_density_loss = use_density_loss,       
-            top_k = top_k, lambda_density = lambda_density, 
+            top_k = top_k, lambda_density = lambda_density, density_detach_m=density_detach_m,
             autoencoder = autoencoder, use_emb = use_emb, use_gae = use_gae, sample_size=sample_size, 
             sample_with_replacement=sample_with_replacement, logger=logger, 
             add_noise=add_noise, noise_scale=noise_scale, use_gaussian=use_gaussian,
             use_penalty=use_penalty, lambda_energy=lambda_energy, reverse=reverse,
+            lambda_m=lambda_m,
+            use_penalty_m=use_penalty_m, lambda_energy_m=lambda_energy_m,
+            lambda_ot=lambda_ot,
+            energy_weighted=energy_weighted,
+            energy_detach_m=energy_detach_m,
         )
         for k, v in l_loss.items():  
             local_losses[k].extend(v)
@@ -573,11 +675,16 @@ def training_regimen(
             hold_one_out=hold_one_out, hold_out=hold_out, 
             hinge_value=hinge_value,
             use_density_loss = use_density_loss,       
-            top_k = top_k, lambda_density = lambda_density,  
+            top_k = top_k, lambda_density = lambda_density, density_detach_m=density_detach_m,
             autoencoder = autoencoder, use_emb = use_emb, use_gae = use_gae, sample_size=sample_size, 
             sample_with_replacement=sample_with_replacement, logger=logger, 
             add_noise=add_noise, noise_scale=noise_scale, use_gaussian=use_gaussian,
             use_penalty=use_penalty, lambda_energy=lambda_energy, reverse=reverse,
+            lambda_m=lambda_m,
+            use_penalty_m=use_penalty_m, lambda_energy_m=lambda_energy_m,
+            lambda_ot=lambda_ot,
+            energy_weighted=energy_weighted,
+            energy_detach_m=energy_detach_m,
         )
         for k, v in l_loss.items():  
             local_losses[k].extend(v)

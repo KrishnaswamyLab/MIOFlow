@@ -82,9 +82,10 @@ def make_model(
     Creates the 'ode' model or 'sde' model or the Geodesic Autoencoder. 
     See the parameters of the respective classes.
     """
+    assert use_norm == False, "This way of energy loss is removed. Now using energy loss."
     if which == 'ode':
         ode = ToyODE(feature_dims, layers, activation,scales,n_aug)
-        model = ToyModel(ode,method,rtol, atol, use_norm=use_norm)
+        model = ToyModel(ode,method,rtol, atol)
     elif which == 'sde':
         ode = ToyODE(feature_dims, layers, activation,scales,n_aug)
         model = ToySDEModel(
@@ -93,7 +94,7 @@ def make_model(
         )
     elif which == 'ode_growth_rate':
         ode = ToyODE(feature_dims + 1, layers, activation,scales,n_aug)
-        model = GrowthRateModel(ode,method,rtol, atol, use_norm=use_norm)
+        model = GrowthRateModel(ode,method,rtol, atol)
     else:
         raise ValueError(f"Model {which} not recognized.")
         # model = ToyGeo(feature_dims, layers, output_dims, activation)
@@ -194,20 +195,37 @@ class ToyModel(nn.Module):
             return the last sample or the whole seq.      
     """
     
-    def __init__(self, func, method='rk4', rtol=None, atol=None, use_norm=False):
+    def __init__(self, func, method='rk4', rtol=None, atol=None, use_norm=False, use_norm_m=False):
         super(ToyModel, self).__init__()        
         self.func = func
         self.method = method
         self.rtol=rtol
         self.atol=atol
-        self.use_norm = use_norm
-        self.norm=[]
+        if use_norm or use_norm_m:
+            raise ValueError("use_norm and use_norm_m are no longer used. Now computing the energy penalty is outside the model.")
+        # self.use_norm = use_norm
+        # self.use_norm_m = use_norm_m
+        # self.norm=[]
+        # self.norm_m = []
 
+    """
+    Xingzhi: changed the energy penalty to being computed outside the model.
+    """
     def forward(self, x, t, return_whole_sequence=False):
 
-        if self.use_norm:
-            for time in t: 
-                self.norm.append(torch.linalg.norm(self.func(time,x)).pow(2))
+        # if self.use_norm or self.use_norm_m:
+        #     for time in t: 
+        #         """
+        #         Xingzhi: This looks weird to me. it loops through time but only uses the initial x.
+        #         I see that it might be an approximation because of the memory burden to save each intermediate x.
+        #         Besides, putting a list of norms and relying on the outer code (the training loop) to reset it is dangerous, but I'll not change it.
+        #         """
+        #         dxdt = self.func(time,x)
+        #         if self.use_norm:
+        #             self.norm.append(torch.linalg.norm(dxdt).pow(2)) 
+        #         if self.use_norm_m:
+        #             self.norm_m.append(torch.square(dxdt[...,-1]).mean())
+
         if self.atol is None and self.rtol is None:
             x = odeint(self.func,x ,t, method=self.method)
         elif self.atol is not None and self.rtol is None:
@@ -229,7 +247,7 @@ class GrowthRateModel(ToyModel):
     """
     Last feature dim is the growth rate / mass.
     """
-    def __init__(self, func, method='rk4', rtol=None, atol=None, use_norm=False, m_init=1.):
+    def __init__(self, func, method='rk4', rtol=None, atol=None, use_norm=False, m_init=0.):
         super().__init__(func, method, rtol, atol, use_norm)
         self.m_init = m_init
     
