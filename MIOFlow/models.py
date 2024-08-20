@@ -33,7 +33,8 @@ class ToyODE(nn.Module):
         layers=[64],
         activation='ReLU',
         scales=None,
-        n_aug=2
+        n_aug=2,
+        zero_gate=False,
     ):
         super(ToyODE, self).__init__()
         steps = [feature_dims+1+n_aug, *layers, feature_dims]
@@ -48,9 +49,12 @@ class ToyODE(nn.Module):
         self.seq = (nn.Sequential(*chain))
         
         self.alpha = nn.Parameter(torch.tensor(scales, requires_grad=True).float()) if scales is not None else None
-        self.n_aug = n_aug        
+        self.n_aug = n_aug       
+        self.zero_gate = zero_gate 
         
     def forward(self, t, x): #NOTE the forward pass when we use torchdiffeq must be forward(self,t,x)
+        if self.zero_gate:
+            m = x[...,-1]
         zero = torch.tensor([0]).cuda() if x.is_cuda else torch.tensor([0])
         zeros = zero.repeat(x.size()[0],self.n_aug)
         time = t.repeat(x.size()[0],1)
@@ -59,6 +63,8 @@ class ToyODE(nn.Module):
         if self.alpha is not None:
             z = torch.randn(x.size(),requires_grad=False).cuda() if x.is_cuda else torch.randn(x.size(),requires_grad=False)
         dxdt = x + z*self.alpha[int(t-1)] if self.alpha is not None else x
+        if self.zero_gate:
+            dxdt[m == 0., -1] = 0.
         return dxdt
 
 # %% ../nbs/03_models.ipynb 4
@@ -93,7 +99,8 @@ def make_model(
             in_features=in_features, out_features=out_features, gunc=gunc
         )
     elif which == 'ode_growth_rate':
-        ode = ToyODE(feature_dims + 1, layers, activation,scales,n_aug)
+        # ode = ToyODE(feature_dims + 1, layers, activation,scales,n_aug, zero_gate=True)
+        ode = ToyODE(feature_dims + 1, layers, activation,scales,n_aug, zero_gate=False)
         model = GrowthRateModel(ode,method,rtol, atol)
     else:
         raise ValueError(f"Model {which} not recognized.")
@@ -243,19 +250,21 @@ from torchdiffeq import odeint_adjoint as odeint
 import os, math, numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 class GrowthRateModel(ToyModel):
     """
     Last feature dim is the growth rate / mass.
     """
-    def __init__(self, func, method='rk4', rtol=None, atol=None, use_norm=False, m_init=0.):
+    def __init__(self, func, method='rk4', rtol=None, atol=None, use_norm=False, m_init=1., m_transform=torch.exp):
         super().__init__(func, method, rtol, atol, use_norm)
         self.m_init = m_init
+        self.m_transform = m_transform
     
     def forward(self, x, t, return_whole_sequence=False):
         m0 = torch.full((x.size()[0], 1), self.m_init, dtype=x.dtype, device=x.device)
         xm = torch.cat((x,m0),dim=1)
         x = super().forward(xm, t, return_whole_sequence)
-        return x[...,:-1], x[...,-1]
+        return x[...,:-1], self.m_transform(x[...,-1])
 
 # %% ../nbs/03_models.ipynb 8
 from torchdiffeq import odeint_adjoint as odeint

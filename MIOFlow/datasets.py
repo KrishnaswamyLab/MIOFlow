@@ -3,7 +3,8 @@
 # %% auto 0
 __all__ = ['construct_diamond', 'make_diamonds', 'make_diamonds_partial_holdout', 'make_swiss_roll', 'make_tree',
            'make_worm_data', 'make_eb_data', 'make_dyngen_data', 'relabel_data', 'rings', 'make_rings', 'make_jacks',
-           'branch_data_clean', 'branch_data_data', 'make_branch_cond']
+           'branch_data_clean', 'branch_data_data', 'make_branch_cond', 'make_uniform_rect', 'make_gaussian_rect',
+           'make_dying_example_unif', 'make_dying_example_gaus']
 
 # %% ../nbs/07_datasets.ipynb 3
 import os
@@ -454,4 +455,125 @@ def make_branch_cond(nt=20, ne=3, n_colors=5, repeats=10, noise=0.1, seed=32):
     e = np.linspace(-1,1,ne)
     data = branch_data_clean(t, e)
     df = branch_data_data(data, n_colors, repeats, noise, seed)
+    return df
+
+# %% ../nbs/07_datasets.ipynb 20
+import numpy as np
+import pandas as pd
+
+def make_uniform_rect(x_bounds, y_bounds, num_points):
+    """
+    Generates uniformly distributed points within a rectangular box.
+
+    Parameters:
+    - x_bounds: Tuple (x_min, x_max) defining the bounds on the X-axis.
+    - y_bounds: Tuple (y_min, y_max) defining the bounds on the Y-axis.
+    - num_points: The number of points to generate.
+
+    Returns:
+    - points: A 2D numpy array where each row is a point [x, y].
+    """
+    x_min, x_max = x_bounds
+    y_min, y_max = y_bounds
+    
+    x_points = np.random.uniform(x_min, x_max, num_points)
+    y_points = np.random.uniform(y_min, y_max, num_points)
+
+    points = np.column_stack((x_points, y_points))
+    
+    return points
+
+import numpy as np
+import pandas as pd
+
+def make_gaussian_rect(x_bounds, y_bounds, num_points):
+    """
+    Generates Gaussian distributed points within a rectangular box.
+    
+    Parameters:
+    - x_bounds: Tuple (x_min, x_max) defining the bounds on the X-axis.
+    - y_bounds: Tuple (y_min, y_max) defining the bounds on the Y-axis.
+    - num_points: The number of points to generate.
+    
+    Returns:
+    - points: A 2D numpy array where each row is a point [x, y].
+    """
+    x_min, x_max = x_bounds
+    y_min, y_max = y_bounds
+    
+    # Calculate the mean and standard deviation based on the bounds
+    x_mean = (x_min + x_max) / 2
+    y_mean = (y_min + y_max) / 2
+    x_std = (x_max - x_min) / 3  # 99.7% of data within bounds for ±3 std
+    y_std = (y_max - y_min) / 6
+    
+    # Generate Gaussian distributed points within the rectangle
+    x_points = np.random.normal(x_mean, x_std, num_points)
+    y_points = np.random.normal(y_mean, y_std, num_points)
+    
+    # Clip the points to stay within the specified bounds
+    x_points = np.clip(x_points, x_min, x_max)
+    y_points = np.clip(y_points, y_min, y_max)
+    
+    # Combine the points into a 2D array (each row is a point [x, y])
+    points = np.column_stack((x_points, y_points))
+    
+    return points
+
+def make_dying_example_unif(n_pts_per_bin=50, seed=223):
+    np.random.seed(seed)
+    tp0 = make_uniform_rect((-1.5, -0.4), (-0.5, 0.5), n_pts_per_bin*2)
+    tp1 = make_uniform_rect((-0.6, 0.6), (-0.5, 0.5), n_pts_per_bin*2)
+    tp2 = make_uniform_rect((0.4, 1.6), (-0.5, 0.5), n_pts_per_bin*2)
+    tp3 = make_uniform_rect((1.4, 2.6), (0., 0.5), n_pts_per_bin)
+    tp4 = make_uniform_rect((2.4, 3.1), (0., 0.5), n_pts_per_bin)
+    # concatenate, but add a column for the timepoint, make it a dataframe
+    # Create dataframes and add a timepoint column
+
+    df_tp0 = pd.DataFrame(tp0, columns=['d1', 'd2'])
+    df_tp0['samples'] = 0
+
+    df_tp1 = pd.DataFrame(tp1, columns=['d1', 'd2'])
+    df_tp1['samples'] = 1
+
+    df_tp2 = pd.DataFrame(tp2, columns=['d1', 'd2'])
+    df_tp2['samples'] = 2
+
+    df_tp3 = pd.DataFrame(tp3, columns=['d1', 'd2'])
+    df_tp3['samples'] = 3
+
+    df_tp4 = pd.DataFrame(tp4, columns=['d1', 'd2'])
+    df_tp4['samples'] = 4
+
+    # Concatenate the dataframes
+    df = pd.concat([df_tp0, df_tp1, df_tp2, df_tp3, df_tp4], ignore_index=True)
+    return df
+
+def make_dying_example_gaus(n_pts_per_bin=50, seed=223):
+    np.random.seed(seed)
+    tp0 = make_gaussian_rect((-1.5, -0.4), (-0.5, 0.5), n_pts_per_bin*2)
+    tp1 = make_gaussian_rect((-0.6, 0.6), (-0.5, 0.5), n_pts_per_bin*2)
+    tp2 = make_gaussian_rect((0.4, 1.6), (-0.5, 0.5), n_pts_per_bin*2)
+    tp3 = make_gaussian_rect((1.4, 2.6), (0., 0.5), n_pts_per_bin)
+    tp4 = make_gaussian_rect((2.4, 3.1), (0., 0.5), n_pts_per_bin)
+    # concatenate, but add a column for the timepoint, make it a dataframe
+    # Create dataframes and add a timepoint column
+
+    df_tp0 = pd.DataFrame(tp0, columns=['d1', 'd2'])
+    df_tp0['samples'] = 0
+
+    df_tp1 = pd.DataFrame(tp1, columns=['d1', 'd2'])
+    df_tp1['samples'] = 1
+
+    df_tp2 = pd.DataFrame(tp2, columns=['d1', 'd2'])
+    df_tp2['samples'] = 2
+
+    df_tp3 = pd.DataFrame(tp3, columns=['d1', 'd2'])
+    df_tp3['samples'] = 3
+
+    df_tp4 = pd.DataFrame(tp4, columns=['d1', 'd2'])
+    df_tp4['samples'] = 4
+
+    # Concatenate the dataframes
+    df = pd.concat([df_tp0, df_tp1, df_tp2, df_tp3, df_tp4], ignore_index=True)
     return df
