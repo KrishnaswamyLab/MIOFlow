@@ -25,7 +25,7 @@ import torch
 
 from .utils import sample, generate_steps
 from .losses import MMD_loss, OT_loss, Density_loss, Local_density_loss, density_specified_OT_loss, EnergyLoss, EnergyLossGrowthRate, EnergyLossSeq, EnergyLossGrowthRateSeq
-from .models import GrowthRateModel
+from .models import GrowthRateModel, GrowthRateSDEModel
 
 DEBUG = False
 def train(
@@ -69,15 +69,23 @@ def train(
     lambda_m2 = 0.,
 
     use_penalty_m = False,
+
     lambda_energy_m = 1.0,
     lambda_ot = 1.0,
     energy_weighted=True,
     energy_detach_m=False,
+
     clip_grad=False,
     clip_grad_norm=1.0,
     threshold_factor=0.1,
     detach_x=False,
     detach_m=False,
+
+    # regularizations for diffusion term
+    diffusion_lambda_energy=1.0,
+    diffusion_lambda_energy_m=1.0,
+    diffusion_energy_weighted=True,
+    diffusion_energy_detach_m=False,
 ):
 
     '''
@@ -189,7 +197,7 @@ def train(
     if use_cuda:
         model = model.cuda()
     
-    if isinstance(model, GrowthRateModel):
+    if isinstance(model, GrowthRateModel) or isinstance(model, GrowthRateSDEModel):
         growth_rate = True
         assert isinstance(criterion, density_specified_OT_loss), 'Criterion must be density_specified_OT_loss when using growth_rate=True'
     else:
@@ -203,6 +211,8 @@ def train(
 
     energy_loss_growth_rate = EnergyLossGrowthRate(weighted=energy_weighted, detach_m=energy_detach_m)
     energy_loss_growth_rate_seq = EnergyLossGrowthRateSeq(weighted=energy_weighted, detach_m=energy_detach_m)
+    energy_loss_sde_growth_rate = EnergyLossGrowthRate(weighted=diffusion_energy_weighted, detach_m=diffusion_energy_detach_m)
+    energy_loss_sde_growth_rate_seq = EnergyLossGrowthRateSeq(weighted=diffusion_energy_weighted, detach_m=diffusion_energy_detach_m)
     energy_loss = EnergyLoss()
     energy_loss_seq = EnergyLossSeq()
 
@@ -229,7 +239,6 @@ def train(
                 data_t0 = sample(df, t0, size=sample_size, replace=sample_with_replacement, to_torch=True, use_cuda=use_cuda)
                 data_t1 = sample(df, t1, size=sample_size, replace=sample_with_replacement, to_torch=True, use_cuda=use_cuda)
                 time = torch.Tensor([t0, t1]).cuda() if use_cuda else torch.Tensor([t0, t1])
-
                 if add_noise:
                     data_t0 += noise(data_t0) * noise_scale
                     data_t1 += noise(data_t1) * noise_scale
@@ -299,15 +308,23 @@ def train(
                 #     loss += lambda_energy_m * penalty_m
                 
                 if growth_rate and (lambda_energy > 0 or lambda_energy_m > 0):
-                    eloss, emloss = energy_loss_growth_rate(model, data_tp, m_tp, time[-1])
+                    eloss, emloss = energy_loss_growth_rate(model.func, data_tp, m_tp, time[-1])
                     if DEBUG and m_tp.min() <= 0.:
                         print("Energy loss", eloss.item())
                         print("Energy mass loss", emloss.item())
                     loss += lambda_energy * eloss
                     loss += lambda_energy_m * emloss
                 elif lambda_energy > 0:
-                    eloss = energy_loss(model, data_tp, time[-1])
+                    eloss = energy_loss(model.func, data_tp, time[-1])
                     loss += lambda_energy * eloss
+                # penalize diffusion term.
+                if isinstance(model, GrowthRateSDEModel) and (diffusion_lambda_energy > 0 or diffusion_lambda_energy_m > 0):
+                    eloss, emloss = energy_loss_sde_growth_rate(model.gunc, data_tp, m_tp, time[-1])
+                    if DEBUG and m_tp.min() <= 0.:
+                        print("Diffusion Energy loss", eloss.item())
+                        print("Diffusion Energy mass loss", emloss.item())
+                    loss += diffusion_lambda_energy * eloss
+                    loss += diffusion_lambda_energy_m * emloss
 
                 if growth_rate and lambda_m > 0:
                     # now taking the mean over all points, 
@@ -447,12 +464,17 @@ def train(
                 loss += lambda_density * density_loss
 
             if growth_rate and (lambda_energy > 0 or lambda_energy_m > 0):
-                eloss, emloss = energy_loss_growth_rate_seq(model, data_tp[non_ignore_idx,...], m_tp[non_ignore_idx,...], time[non_ignore_idx,...])
+                eloss, emloss = energy_loss_growth_rate_seq(model.func, data_tp[non_ignore_idx,...], m_tp[non_ignore_idx,...], time[non_ignore_idx,...])
                 loss += lambda_energy * eloss
                 loss += lambda_energy_m * emloss
             elif lambda_energy > 0:
-                eloss = energy_loss_seq(model, data_tp[non_ignore_idx,...], time[non_ignore_idx,...])
+                eloss = energy_loss_seq(model.func, data_tp[non_ignore_idx,...], time[non_ignore_idx,...])
                 loss += lambda_energy * eloss
+            # penalize diffusion term.
+            if isinstance(model, GrowthRateSDEModel) and (diffusion_lambda_energy > 0 or diffusion_lambda_energy_m > 0):
+                eloss, emloss = energy_loss_sde_growth_rate_seq(model.gunc, data_tp[non_ignore_idx,...], m_tp[non_ignore_idx,...], time[non_ignore_idx,...])
+                loss += diffusion_lambda_energy * eloss
+                loss += diffusion_lambda_energy_m * emloss
 
             # if use_penalty:
             #     penalty = sum([model.norm[-(i+1)] for i in range(1, len(groups))
@@ -644,11 +666,17 @@ def training_regimen(
     use_penalty_m = False,
     lambda_energy_m = 1.0,
     energy_weighted=True,
-    energy_detach_m=True,
+    energy_detach_m=False,
     lambda_ot = 1.0,
     threshold_factor=0.1,
     detach_x=False,
     detach_m=False,
+
+    # regularizations for diffusion term
+    diffusion_lambda_energy=1.0,
+    diffusion_lambda_energy_m=1.0,
+    diffusion_energy_weighted=True,
+    diffusion_energy_detach_m=False,
 ):
     recon = use_gae and not use_emb
     if steps is None:
@@ -699,6 +727,10 @@ def training_regimen(
             threshold_factor=threshold_factor,
             detach_x=detach_x,
             detach_m=detach_m,
+            diffusion_lambda_energy=diffusion_lambda_energy,
+            diffusion_lambda_energy_m=diffusion_lambda_energy_m, 
+            diffusion_energy_weighted=diffusion_energy_weighted,
+            diffusion_energy_detach_m=diffusion_energy_detach_m,
         )
         for k, v in l_loss.items():  
             local_losses[k].extend(v)
@@ -741,6 +773,10 @@ def training_regimen(
             threshold_factor=threshold_factor,
             detach_x=detach_x,
             detach_m=detach_m,
+            diffusion_lambda_energy=diffusion_lambda_energy,
+            diffusion_lambda_energy_m=diffusion_lambda_energy_m, 
+            diffusion_energy_weighted=diffusion_energy_weighted,
+            diffusion_energy_detach_m=diffusion_energy_detach_m,
         )
         for k, v in l_loss.items():  
             local_losses[k].extend(v)
@@ -784,6 +820,10 @@ def training_regimen(
             threshold_factor=threshold_factor,
             detach_x=detach_x,
             detach_m=detach_m,
+            diffusion_lambda_energy=diffusion_lambda_energy,
+            diffusion_lambda_energy_m=diffusion_lambda_energy_m, 
+            diffusion_energy_weighted=diffusion_energy_weighted,
+            diffusion_energy_detach_m=diffusion_energy_detach_m,
         )
         for k, v in l_loss.items():  
             local_losses[k].extend(v)

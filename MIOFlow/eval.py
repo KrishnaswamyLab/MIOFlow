@@ -7,7 +7,7 @@ __all__ = ['generate_points', 'generate_trajectories', 'generate_plot_data', 'ge
 # %% ../nbs/10_eval.ipynb 3
 import torch, numpy as np
 from .utils import sample, to_np
-from .models import GrowthRateModel
+from .models import GrowthRateModel, GrowthRateSDEModel
 
 def generate_points(
     model, df, n_points=100, 
@@ -48,7 +48,7 @@ def generate_points(
         data_t0 = autoencoder.encoder(data_t0)
         
     time =  torch.Tensor(sample_time).cuda() if use_cuda else torch.Tensor(sample_time)
-    if isinstance(model, GrowthRateModel):
+    if isinstance(model, GrowthRateModel) or isinstance(model, GrowthRateSDEModel):
         generated, _ = model(data_t0, time, return_whole_sequence=True)
     else:
         generated = model(data_t0, time, return_whole_sequence=True)
@@ -354,7 +354,7 @@ def generate_tjnet_trajectories(
             
     if autoencoder is not None and recon:
         data_tn = autoencoder.encoder(data_tn)
-    if isinstance(model, GrowthRateModel):
+    if isinstance(model, GrowthRateModel) or isinstance(model, GrowthRateSDEModel):
         generated, _ = model(data_tn, sample_time, return_whole_sequence=True)
     else:
         generated = model(data_tn, sample_time, return_whole_sequence=True)

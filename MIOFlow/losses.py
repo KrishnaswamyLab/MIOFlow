@@ -249,8 +249,8 @@ class EnergyLossSeq(nn.Module):
     def __init__(self):
         pass
 
-    def __call__(self, model, xtseq, t):
-        dxdt = torch.stack([model.func(t[i], xtseq[i]) for i in range(len(t))])
+    def __call__(self, func, xtseq, t):
+        dxdt = torch.stack([func(t[i], xtseq[i]) for i in range(len(t))])
         return torch.square(dxdt).mean()
     
 class EnergyLossGrowthRateSeq(nn.Module):
@@ -265,11 +265,11 @@ class EnergyLossGrowthRateSeq(nn.Module):
         else:
             self.softmax = lambda x: x
 
-    def __call__(self, model, xtseq, mtseq, t):
+    def __call__(self, func, xtseq, mtseq, t):
         """Returns the energy wrt the x and m curves separately.
 
         Args:
-            model (_type_): _description_
+            func (_type_): _description_
             xtseq (_type_): _description_
             mtseq (_type_): _description_
             t (_type_): _description_
@@ -278,7 +278,7 @@ class EnergyLossGrowthRateSeq(nn.Module):
             _type_: _description_
         """
         xmseq = torch.cat([xtseq, mtseq.unsqueeze(-1)], dim=-1)
-        dxdt = torch.stack([model.func(t[i], xmseq[i]) for i in range(len(t))])
+        dxdt = torch.stack([func(t[i], xmseq[i]) for i in range(len(t))])
         if self.weighted:
             masses = self.softmax(mtseq) * mtseq.shape[-1]
             if self.detach_m:
@@ -290,8 +290,8 @@ class EnergyLoss(nn.Module):
     def __init__(self):
         pass
 
-    def __call__(self, model, x, t): # should use the current t. i.e. t_seq[-1]
-        dxdt = model.func(t, x)
+    def __call__(self, func, x, t): # should use the current t. i.e. t_seq[-1]
+        dxdt = func(t, x)
         return torch.square(dxdt).mean()
 
 class EnergyLossGrowthRate(nn.Module):
@@ -306,9 +306,9 @@ class EnergyLossGrowthRate(nn.Module):
         else:
             self.softmax = lambda x: x
 
-    def __call__(self, model, x, m, t):
+    def __call__(self, func, x, m, t):
         xm = torch.cat([x, m.unsqueeze(-1)], dim=-1)
-        dxdt = model.func(t, xm)
+        dxdt = func(t, xm)
         if self.weighted:
             masses = self.softmax(m) * m.shape[-1]
             if self.detach_m:
