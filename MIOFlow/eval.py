@@ -7,7 +7,6 @@ __all__ = ['generate_points', 'generate_trajectories', 'generate_plot_data', 'ge
 # %% ../nbs/10_eval.ipynb 3
 import torch, numpy as np
 from .utils import sample, to_np
-from .models import GrowthRateModel, GrowthRateSDEModel
 
 def generate_points(
     model, df, n_points=100, 
@@ -48,10 +47,7 @@ def generate_points(
         data_t0 = autoencoder.encoder(data_t0)
         
     time =  torch.Tensor(sample_time).cuda() if use_cuda else torch.Tensor(sample_time)
-    if isinstance(model, GrowthRateModel) or isinstance(model, GrowthRateSDEModel):
-        generated, _ = model(data_t0, time, return_whole_sequence=True)
-    else:
-        generated = model(data_t0, time, return_whole_sequence=True)
+    generated = model(data_t0, time, return_whole_sequence=True)
     if autoencoder is not None and recon:
         generated = autoencoder.decoder(generated)
     return to_np(generated)
@@ -278,7 +274,6 @@ def calculate_nn(
         raise NotImplementedError(f'method={method} not implemented')
 
 # %% ../nbs/10_eval.ipynb 5
-from .models import GrowthRateModel
 from MIOFlow.utils import (
     to_np, get_groups_from_df, get_cell_types_from_df, 
     get_sample_n_from_df, get_times_from_groups
@@ -354,10 +349,8 @@ def generate_tjnet_trajectories(
             
     if autoencoder is not None and recon:
         data_tn = autoencoder.encoder(data_tn)
-    if isinstance(model, GrowthRateModel) or isinstance(model, GrowthRateSDEModel):
-        generated, _ = model(data_tn, sample_time, return_whole_sequence=True)
-    else:
-        generated = model(data_tn, sample_time, return_whole_sequence=True)
+
+    generated = model(data_tn, sample_time, return_whole_sequence=True)
     if autoencoder is not None and recon:
         generated = autoencoder.decoder(generated)
     generated = to_np(generated)
