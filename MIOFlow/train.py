@@ -51,7 +51,8 @@ def train(
     use_penalty=False,
     lambda_energy=1.0,
 
-    reverse:bool = False
+    reverse:bool = False,
+    n_conditions:int = 0,
 ):
 
     '''
@@ -180,6 +181,7 @@ def train(
                 # sample data
                 data_t0 = sample(df, t0, size=sample_size, replace=sample_with_replacement, to_torch=True, use_cuda=use_cuda)
                 data_t1 = sample(df, t1, size=sample_size, replace=sample_with_replacement, to_torch=True, use_cuda=use_cuda)
+                data_t1 = data_t1[:,:data_t1.shape[1]-n_conditions] # remove the conditional features
                 time = torch.Tensor([t0, t1]).cuda() if use_cuda else torch.Tensor([t0, t1])
 
                 if add_noise:
@@ -192,6 +194,7 @@ def train(
                 data_tp = model(data_t0, time)
 
                 if autoencoder is not None and use_emb:        
+                    # WARNING: not tested with conditional features
                     data_tp, data_t1 = autoencoder.encoder(data_tp), autoencoder.encoder(data_t1)
                 # loss between prediction and sample t1
                 loss = criterion(data_tp, data_t1)
@@ -265,6 +268,8 @@ def train(
                 raise ValueError('Unknown group to hold out')
             else:
                 pass
+
+            data_ti = [data_ti[i][:,:data_ti[i].shape[1]-n_conditions] for i in range(len(data_ti))] # remove the conditional features
 
             loss = sum([
                 criterion(data_tp[i], data_ti[i]) 
@@ -437,7 +442,8 @@ def training_regimen(
     steps=None, plot_every=None,
     n_points=100, n_trajectories=100, n_bins=100, 
     local_losses=None, batch_losses=None, globe_losses=None,
-    reverse_schema=True, reverse_n=4
+    reverse_schema=True, reverse_n=4,
+    n_conditions:int = 0
 ):
     recon = use_gae and not use_emb
     if steps is None:
@@ -479,7 +485,8 @@ def training_regimen(
             autoencoder = autoencoder, use_emb = use_emb, use_gae = use_gae, sample_size=sample_size, 
             sample_with_replacement=sample_with_replacement, logger=logger,
             add_noise=add_noise, noise_scale=noise_scale, use_gaussian=use_gaussian, 
-            use_penalty=use_penalty, lambda_energy=lambda_energy, reverse=reverse
+            use_penalty=use_penalty, lambda_energy=lambda_energy, reverse=reverse,
+            n_conditions=n_conditions
         )
         for k, v in l_loss.items():  
             local_losses[k].extend(v)
@@ -513,7 +520,8 @@ def training_regimen(
             autoencoder = autoencoder, use_emb = use_emb, use_gae = use_gae, sample_size=sample_size, 
             sample_with_replacement=sample_with_replacement, logger=logger, 
             add_noise=add_noise, noise_scale=noise_scale, use_gaussian=use_gaussian,
-            use_penalty=use_penalty, lambda_energy=lambda_energy, reverse=reverse
+            use_penalty=use_penalty, lambda_energy=lambda_energy, reverse=reverse,
+            n_conditions=n_conditions
         )
         for k, v in l_loss.items():  
             local_losses[k].extend(v)
@@ -548,7 +556,8 @@ def training_regimen(
             autoencoder = autoencoder, use_emb = use_emb, use_gae = use_gae, sample_size=sample_size, 
             sample_with_replacement=sample_with_replacement, logger=logger, 
             add_noise=add_noise, noise_scale=noise_scale, use_gaussian=use_gaussian,
-            use_penalty=use_penalty, lambda_energy=lambda_energy, reverse=reverse
+            use_penalty=use_penalty, lambda_energy=lambda_energy, reverse=reverse,
+            n_conditions=n_conditions
         )
         for k, v in l_loss.items():  
             local_losses[k].extend(v)
