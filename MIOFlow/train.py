@@ -15,6 +15,7 @@ import torch
 
 from .utils import sample, generate_steps
 from .losses import MMD_loss, OT_loss, Density_loss, Local_density_loss
+from .losses import ot_loss_given_plan
 
 def train(
     model, df, groups, optimizer, n_batches=20, 
@@ -53,6 +54,7 @@ def train(
 
     reverse:bool = False,
     n_conditions:int = 0,
+    lambda_cond = 1.0,
 ):
 
     '''
@@ -181,6 +183,9 @@ def train(
                 # sample data
                 data_t0 = sample(df, t0, size=sample_size, replace=sample_with_replacement, to_torch=True, use_cuda=use_cuda)
                 data_t1 = sample(df, t1, size=sample_size, replace=sample_with_replacement, to_torch=True, use_cuda=use_cuda)
+                data_t1_cond = data_t1[:,data_t1.shape[1]-n_conditions:]
+                if len(data_t1_cond.shape) == 1:
+                    data_t1_cond = data_t1_cond[:,None]
                 data_t1 = data_t1[:,:data_t1.shape[1]-n_conditions] # remove the conditional features
                 time = torch.Tensor([t0, t1]).cuda() if use_cuda else torch.Tensor([t0, t1])
 
@@ -196,8 +201,17 @@ def train(
                 if autoencoder is not None and use_emb:        
                     # WARNING: not tested with conditional features
                     data_tp, data_t1 = autoencoder.encoder(data_tp), autoencoder.encoder(data_t1)
-                # loss between prediction and sample t1
-                loss = criterion(data_tp, data_t1)
+                if n_conditions > 0 and lambda_cond > 0:
+                    assert isinstance(criterion, OT_loss)
+                    loss, plan = criterion(data_tp, data_t1, return_plan=True)
+                    # print(data_t0[:,-n_conditions:].shape)
+                    # print(data_t1_cond.shape)
+                    loss_cond_change = ot_loss_given_plan(plan, data_t0[:,-n_conditions:], data_t1_cond)
+                    loss += lambda_cond * loss_cond_change
+                    # print(f'loss_cond_change: {loss_cond_change.item()}')
+                else:   
+                    # loss between prediction and sample t1
+                    loss = criterion(data_tp, data_t1)
 
                 if use_density_loss:                
                     density_loss = density_fn(data_tp, data_t1, top_k=top_k)
@@ -443,7 +457,8 @@ def training_regimen(
     n_points=100, n_trajectories=100, n_bins=100, 
     local_losses=None, batch_losses=None, globe_losses=None,
     reverse_schema=True, reverse_n=4,
-    n_conditions:int = 0
+    n_conditions:int = 0,
+    lambda_cond:float = 0.0
 ):
     recon = use_gae and not use_emb
     if steps is None:
@@ -486,7 +501,7 @@ def training_regimen(
             sample_with_replacement=sample_with_replacement, logger=logger,
             add_noise=add_noise, noise_scale=noise_scale, use_gaussian=use_gaussian, 
             use_penalty=use_penalty, lambda_energy=lambda_energy, reverse=reverse,
-            n_conditions=n_conditions
+            n_conditions=n_conditions, lambda_cond=lambda_cond
         )
         for k, v in l_loss.items():  
             local_losses[k].extend(v)
@@ -521,7 +536,7 @@ def training_regimen(
             sample_with_replacement=sample_with_replacement, logger=logger, 
             add_noise=add_noise, noise_scale=noise_scale, use_gaussian=use_gaussian,
             use_penalty=use_penalty, lambda_energy=lambda_energy, reverse=reverse,
-            n_conditions=n_conditions
+            n_conditions=n_conditions, lambda_cond=lambda_cond
         )
         for k, v in l_loss.items():  
             local_losses[k].extend(v)
@@ -557,7 +572,7 @@ def training_regimen(
             sample_with_replacement=sample_with_replacement, logger=logger, 
             add_noise=add_noise, noise_scale=noise_scale, use_gaussian=use_gaussian,
             use_penalty=use_penalty, lambda_energy=lambda_energy, reverse=reverse,
-            n_conditions=n_conditions
+            n_conditions=n_conditions, lambda_cond=lambda_cond
         )
         for k, v in l_loss.items():  
             local_losses[k].extend(v)
