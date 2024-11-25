@@ -51,3 +51,5 @@ share/python-wheels/
 *.egg
 MANIFEST
 *.npy
+*.pth
+*.pt

@@ -52,7 +52,7 @@ import numpy as np
 class OT_loss(nn.Module):
     _valid = 'emd sinkhorn sinkhorn_knopp_unbalanced'.split()
 
-    def __init__(self, which='emd', use_cuda=True):
+    def __init__(self, which='emd', use_cuda=True, detach_mass=True):
         if which not in self._valid:
             raise ValueError(f'{which} not known ({self._valid})')
         elif which == 'emd':
@@ -64,19 +64,27 @@ class OT_loss(nn.Module):
         else:
             pass
         self.use_cuda=use_cuda
+        self.detach_mass = detach_mass
 
-    def __call__(self, source, target, use_cuda=None, return_plan=False):
+    def __call__(self, source, target, source_mass=None, target_mass=None, use_cuda=None, return_plan=False):
         if use_cuda is None:
             use_cuda = self.use_cuda
-        mu = torch.from_numpy(ot.unif(source.size()[0]))
-        nu = torch.from_numpy(ot.unif(target.size()[0]))
+        if source_mass is None:
+            mu = torch.tensor(ot.unif(source.size()[0]), dtype=source.dtype, device=source.device)
+        else:
+            mu = (source_mass)/(source_mass).sum()
+        if target_mass is None:
+            nu = torch.tensor(ot.unif(target.size()[0]), dtype=target.dtype, device=target.device)
+        else:
+            nu = (target_mass)/(target_mass).sum()
         M = torch.cdist(source, target)**2
         pi = self.fn(mu, nu, M.detach().cpu())
         if type(pi) is np.ndarray:
             pi = torch.tensor(pi)
         elif type(pi) is torch.Tensor:
-            pi = pi.clone().detach()
-        pi = pi.cuda() if use_cuda else pi
+            if self.detach_mass:
+                pi = pi.clone().detach()
+            pi = pi.cuda() if use_cuda else pi
         M = M.to(pi.device)
         loss = torch.sum(pi * M)
         if return_plan:
