@@ -52,13 +52,13 @@ import numpy as np
 class OT_loss(nn.Module):
     _valid = 'emd sinkhorn sinkhorn_knopp_unbalanced'.split()
 
-    def __init__(self, which='emd', use_cuda=True, detach_mass=True):
+    def __init__(self, which='emd', use_cuda=True, detach_mass=True, sinkhorn_lambda=2.0):
         if which not in self._valid:
             raise ValueError(f'{which} not known ({self._valid})')
         elif which == 'emd':
             self.fn = lambda m, n, M: ot.emd(m, n, M)
         elif which == 'sinkhorn':
-            self.fn = lambda m, n, M : ot.sinkhorn(m, n, M, 2.0)
+            self.fn = lambda m, n, M : ot.sinkhorn(m, n, M, sinkhorn_lambda)
         elif which == 'sinkhorn_knopp_unbalanced':
             self.fn = lambda m, n, M : ot.unbalanced.sinkhorn_knopp_unbalanced(m, n, M, 1.0, 1.0)
         else:
