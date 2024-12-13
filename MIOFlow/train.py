@@ -471,8 +471,11 @@ def training_regimen(
     reverse_schema=True, reverse_n=4,
     n_conditions:int = 0,
     lambda_cond:float = 0.0,
-    growth_rate_model=None
+    growth_rate_model=None,
+    lrs=None,
 ):
+    if lrs is not None:
+        assert len(lrs) == 3
     recon = use_gae and not use_emb
     if steps is None:
         steps = generate_steps(groups)
@@ -500,8 +503,11 @@ def training_regimen(
     
     reverse = False
     for epoch in tqdm(range(n_local_epochs), desc='Pretraining Epoch'):
-        reverse = True if reverse_schema and epoch % reverse_n == 0 else False
+        if lrs is not None:
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = lrs[0]
 
+        reverse = True if reverse_schema and epoch % reverse_n == 0 else False
         l_loss, b_loss, g_loss = train(
             model, df, groups, optimizer, n_batches, 
             criterion = criterion, use_cuda = use_cuda,
@@ -536,6 +542,10 @@ def training_regimen(
             )
 
     for epoch in tqdm(range(n_epochs), desc='Epoch'):
+        if lrs is not None:
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = lrs[1]
+
         reverse = True if reverse_schema and epoch % reverse_n == 0 else False
         l_loss, b_loss, g_loss = train(
             model, df, groups, optimizer, n_batches, 
@@ -571,6 +581,9 @@ def training_regimen(
             )
         
     for epoch in tqdm(range(n_post_local_epochs), desc='Posttraining Epoch'):
+        if lrs is not None:
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = lrs[2]
         reverse = True if reverse_schema and epoch % reverse_n == 0 else False
 
         l_loss, b_loss, g_loss = train(
