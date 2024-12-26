@@ -39,6 +39,9 @@ $ cd path/to/this/repository
 $ pip install -e MIOFlow
 ```
 
+### Data
+Most datasets are available in the directory `data`. The file `eb_v4_df_pca200.npy` can be downloaded [here](https://drive.google.com/file/d/1HvEUDO1U73iHmt-vY4YbTvOUxr6IdpK_/view?usp=drive_link).
+
 ### Add kernel to Jupyter Notebook
 
 #### automatic conda kernels
