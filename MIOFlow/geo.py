@@ -70,7 +70,7 @@ class DiffusionDistance:
         self.P = graph.diff_op.toarray() 
         self.compute_stationnary_distrib()
         self.compute_custom_diffusion_distance()       
-        return self.G if not self.symmetrize else (self.G + np.transpose(self.G))/0.5
+        return self.G if not self.symmetrize else (self.G + np.transpose(self.G))*0.5
 
 # %% ../nbs/09_geo.ipynb 4
 import phate
