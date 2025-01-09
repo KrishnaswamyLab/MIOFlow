@@ -18,7 +18,7 @@ class DiffusionDistance:
         Anisotropy (int): the alpha in Coifman Lafon 2006, 1: double normalization 0: usual random walk
         log (bool) log(P) or not
         normalize (bool) min-max normalization of the distance matrix
-        phate (bool) is PHATE op if true (should be the same as graphtool)
+        symmetrize (bool) enforce symmetry of the diffusion distances
         
     """
    
@@ -44,7 +44,7 @@ class DiffusionDistance:
         P_d = P if not self.log else csr_matrix((np.log(P.data),P.indices,P.indptr), shape=P.shape)
         G = pairwise_distances(P_d,P_d,metric='l1',n_jobs=-1)
                 
-        for t in range(1,self.t_max): 
+        for t in range(1,self.t_max+1): 
             P = P @ P 
             if self.log==True:
                 dist = pairwise_distances(P,P,metric='l1',n_jobs=-1)
@@ -70,7 +70,7 @@ class DiffusionDistance:
         self.P = graph.diff_op.toarray() 
         self.compute_stationnary_distrib()
         self.compute_custom_diffusion_distance()       
-        return self.G if not self.symmetrize else (self.G + np.transpose(self.G))/0.5
+        return self.G if not self.symmetrize else (self.G + np.transpose(self.G))*0.5
 
 # %% ../nbs/09_geo.ipynb 4
 import phate
@@ -82,8 +82,7 @@ import graphtools
 class DiffusionAffinity:
     """
     class DiffusionAffinity        
-        X (np.array) data 
-        t_max (int), 2^t_max is the max scale of the Diffusion kernel
+        X (np.array) data
         knn (int) = 5 number of neighbors for the KNN in the alpha decay kernel construction, same default as in PHATE
         Anisotropy (int): the alpha in Coifman Lafon 2006, 1: double normalization 0: usual random walk
         t_diff (int) the power of the diffusion affinity matrix
@@ -106,7 +105,7 @@ class DiffusionAffinity:
         if self.t_diff ==1:
             self.G = sklearn.metrics.pairwise.pairwise_distances(self.A,self.A,metric='l2',n_jobs=-1)
         else:
-            k = self.topeig if self.topeig < X.shape[0] else X.shape[0]-2
+            k = self.topeig if self.topeig <= X.shape[0]-2 else X.shape[0]-2
             w, v = eigs(self.A,k=k, which='LR')
             W = np.diag(w)
             A_t = np.real(v @ (W**self.t_diff) @ v.T)
@@ -121,8 +120,7 @@ class DiffusionMap:
     """
     Arguments
     ---------     
-        X (np.array) data 
-        t_max (int), 2^t_max is the max scale of the Diffusion kernel
+        X (np.array) data
         knn (int) = 5 number of neighbors for the KNN in the alpha decay kernel construction, same default as in PHATE
         Anisotropy (int): the alpha in Coifman Lafon 2006, 1: double normalization 0: usual random walk
         t_diff (int) the power of the diffusion affinity matrix
@@ -147,12 +145,12 @@ class DiffusionMap:
     def fit(self, X):
         self.graph = graphtools.Graph(X, knn=self.knn,anisotropy=self.aniso) 
         self.A = self.graph.diff_aff
-        k = self.topeig if self.topeig < X.shape[0] else X.shape[0]-2
+        k = self.topeig if self.topeig <= X.shape[0]-2 else X.shape[0]-2
         w, v = eigs(self.A,k=k, which='LR')
         w, v = np.real(w), np.real(v)
         v = v/v[:,0,None]
         self.emb = np.vstack([(w[i]**self.t_diff)*v[:,i] for i in range(1,self.n_emb+1)])
-        self.G = scipy.spatial.distance.pdist(self.emb.T)
+        self.G = scipy.spatial.distance.squareform(scipy.spatial.distance.pdist(self.emb.T))
         return self.G
 
 # %% ../nbs/09_geo.ipynb 6
@@ -240,7 +238,7 @@ class old_DiffusionDistance:
     def compute_custom_diffusion_distance(self): 
         G = np.zeros((self.X.shape[0], self.X.shape[0]))
                 
-        for t in range(0,self.t_max): 
+        for t in range(0,self.t_max+1): 
             G = G + 2**(-(self.t_max-t)/2) * self.distance_matrix_Pt(t)
         G = G + 2**(-(self.t_max+1)/2) * distance_matrix(self.pi[:, None],self.pi[:, None],1)
 
