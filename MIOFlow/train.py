@@ -56,6 +56,10 @@ def train(
     n_conditions:int = 0,
     lambda_cond = 1.0,
     growth_rate_model=None,
+    ot_lambda_global=None,
+    ot_lambda_local=None,
+    lambda_energy_local=None,
+    lambda_energy_global=None,
 ):
 
     '''
@@ -133,6 +137,15 @@ def train(
 
         reverse (bool): Whether to train time backwards.
     '''
+    if ot_lambda_global is None:
+        ot_lambda_global = {g:1.0 for g in groups}
+    if ot_lambda_local is None:
+        ot_lambda_local = {g:1.0 for g in groups}
+    if lambda_energy_local is None:
+        lambda_energy_local = {g:1.0 for g in groups}
+    if lambda_energy_global is None:
+        lambda_energy_global = {g:1.0 for g in groups}
+
     if autoencoder is None and (use_emb or use_gae):
         use_emb = False
         use_gae = False
@@ -213,6 +226,7 @@ def train(
                     loss, plan = criterion(data_tp, data_t1, source_mass=source_mass, return_plan=True)
                     # print(data_t0[:,-n_conditions:].shape)
                     # print(data_t1_cond.shape)
+                    loss = loss * ot_lambda_local[t1]
                     loss_cond_change = ot_loss_given_plan(plan, data_t0[:,-n_conditions:], data_t1_cond)
                     loss += lambda_cond * loss_cond_change
                     # print(f'loss_cond_change: {loss_cond_change.item()}')
@@ -227,7 +241,8 @@ def train(
 
                 if use_penalty:
                     penalty = sum(model.norm)
-                    loss += lambda_energy * penalty
+                    # loss += lambda_energy * penalty
+                    loss += lambda_energy_local[t1] * penalty
 
                 # apply local loss as we calculate it
                 if apply_losses_in_time and local_loss:
@@ -298,7 +313,7 @@ def train(
             data_ti = [data_ti[i][:,:data_ti[i].shape[1]-n_conditions] for i in range(len(data_ti))] # remove the conditional features
 
             loss = sum([
-                criterion(data_tp[i], data_ti[i], source_mass=source_masses[i-1]) # mass predicted using previous time point
+                ot_lambda_global[i] * criterion(data_tp[i], data_ti[i], source_mass=source_masses[i-1]) # mass predicted using previous time point
                 for i in range(1, len(groups))
                 if groups[i] != to_ignore
             ])
@@ -309,9 +324,10 @@ def train(
                 loss += lambda_density * density_loss
 
             if use_penalty:
-                penalty = sum([model.norm[-(i+1)] for i in range(1, len(groups))
+                penalty = sum([model.norm[-(i+1)] * lambda_energy_global[groups[i]] for i in range(1, len(groups))
                     if groups[i] != to_ignore])
-                loss += lambda_energy * penalty
+                # loss += lambda_energy * penalty / (len(groups) - int(to_ignore is not None))
+                loss += penalty / (len(groups) - int(to_ignore is not None))
                                        
             loss.backward()
             optimizer.step()
@@ -473,6 +489,10 @@ def training_regimen(
     lambda_cond:float = 0.0,
     growth_rate_model=None,
     lrs=None,
+    ot_lambda_global=None,
+    ot_lambda_local=None,
+    lambda_energy_local=None,
+    lambda_energy_global=None
 ):
     if lrs is not None:
         assert len(lrs) == 3
@@ -520,7 +540,9 @@ def training_regimen(
             sample_with_replacement=sample_with_replacement, logger=logger,
             add_noise=add_noise, noise_scale=noise_scale, use_gaussian=use_gaussian, 
             use_penalty=use_penalty, lambda_energy=lambda_energy, reverse=reverse,
-            n_conditions=n_conditions, lambda_cond=lambda_cond, growth_rate_model=growth_rate_model
+            n_conditions=n_conditions, lambda_cond=lambda_cond, growth_rate_model=growth_rate_model,
+            ot_lambda_global=ot_lambda_global, ot_lambda_local=ot_lambda_local,
+            lambda_energy_local=lambda_energy_local, lambda_energy_global=lambda_energy_global
         )
         for k, v in l_loss.items():  
             local_losses[k].extend(v)
@@ -559,7 +581,9 @@ def training_regimen(
             sample_with_replacement=sample_with_replacement, logger=logger, 
             add_noise=add_noise, noise_scale=noise_scale, use_gaussian=use_gaussian,
             use_penalty=use_penalty, lambda_energy=lambda_energy, reverse=reverse,
-            n_conditions=n_conditions, lambda_cond=lambda_cond, growth_rate_model=growth_rate_model
+            n_conditions=n_conditions, lambda_cond=lambda_cond, growth_rate_model=growth_rate_model,
+            ot_lambda_global=ot_lambda_global, ot_lambda_local=ot_lambda_local,
+            lambda_energy_local=lambda_energy_local, lambda_energy_global=lambda_energy_global
         )
         for k, v in l_loss.items():  
             local_losses[k].extend(v)
@@ -598,7 +622,9 @@ def training_regimen(
             sample_with_replacement=sample_with_replacement, logger=logger, 
             add_noise=add_noise, noise_scale=noise_scale, use_gaussian=use_gaussian,
             use_penalty=use_penalty, lambda_energy=lambda_energy, reverse=reverse,
-            n_conditions=n_conditions, lambda_cond=lambda_cond, growth_rate_model=growth_rate_model
+            n_conditions=n_conditions, lambda_cond=lambda_cond, growth_rate_model=growth_rate_model,
+            ot_lambda_global=ot_lambda_global, ot_lambda_local=ot_lambda_local,
+            lambda_energy_local=lambda_energy_local, lambda_energy_global=lambda_energy_global
         )
         for k, v in l_loss.items():  
             local_losses[k].extend(v)

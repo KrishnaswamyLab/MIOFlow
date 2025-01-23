@@ -53,3 +53,5 @@ MANIFEST
 *.npy
 *.pth
 *.pt
+old/
+results_final*
