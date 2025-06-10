@@ -1,3 +1,6 @@
+__all__ = ['ROOT_DIR', 'DATA_DIR', 'NTBK_DIR', 'IMGS_DIR', 'RES_DIR', 'WORM_FILE', 'EB_BODIES_FILE', 'EB_BODIES_PSEUDO_4',
+           'EB_BODIES_PSEUDO_6', 'EB_BODIES_PSEUDO_25', 'EB_BODIES_PSEUDO_82', 'DYNGEN_INFO_FILE', 'DYNGEN_EXPR_FILE']
+
 
 '''
 ---
@@ -9,9 +12,6 @@ title: Constants
 
 ---
 '''
-__all__ = ['ROOT_DIR', 'DATA_DIR', 'NTBK_DIR', 'IMGS_DIR', 'RES_DIR', 'WORM_FILE', 'EB_BODIES_FILE', 'EB_BODIES_PSEUDO_4',
-           'EB_BODIES_PSEUDO_6', 'EB_BODIES_PSEUDO_25', 'EB_BODIES_PSEUDO_82', 'DYNGEN_INFO_FILE', 'DYNGEN_EXPR_FILE']
-
 
 import os, inspect
 __file = inspect.getfile(lambda: None)
