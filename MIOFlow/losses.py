@@ -2,12 +2,12 @@
 __all__ = ['MMD_loss', 'OT_loss', 'ot_loss_given_plan', 'covariance_loss', 'Density_loss', 'Local_density_loss']
 
 
-import os
-import math
 import numpy as np
 import torch
 import torch.nn as nn
+import ot
 
+# TODO: ToyGeo is not implemented.
 
 class MMD_loss(nn.Module):
     '''

@@ -2,7 +2,8 @@
 __all__ = ['group_extract', 'sample', 'to_np', 'generate_steps', 'set_seeds', 'config_hold_out', 'config_criterion',
            'get_groups_from_df', 'get_cell_types_from_df', 'get_sample_n_from_df', 'get_times_from_groups']
 
-import numpy as np, pandas as pd
+import numpy as np
+import pandas as pd
 import torch
 import random
 

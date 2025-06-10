@@ -1,7 +1,6 @@
 
 __all__ = ['ode_solve', 'ODEF', 'ODEAdjoint', 'NeuralODE']
 
-import os
 import math
 import numpy as np
 import torch
