@@ -7,13 +7,14 @@ import os
 import pandas as pd
 import numpy as np
 import phate
+from phate import PHATE
+
 from sklearn import datasets
 
 import seaborn as sns
 sns.color_palette("bright")
 
 from .constants import WORM_FILE, EB_BODIES_FILE, EB_BODIES_PSEUDO_4, EB_BODIES_PSEUDO_6, EB_BODIES_PSEUDO_25, EB_BODIES_PSEUDO_82, DYNGEN_INFO_FILE, DYNGEN_EXPR_FILE
-from phate import PHATE
 import warnings
 
 
