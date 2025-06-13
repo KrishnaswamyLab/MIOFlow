@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mioflow"
+description = "MIOFlow is a Python package for modeling and analyzing single-cell RNA-seq data using optimal flows."
+readme = "README.md"
+requires-python = ">=3.6"
+# license = "LicenseRef-Yale-License"
+license-files =["LICENSE.md"]
+keywords = ["neural ode", "trajectory", "emd", "Optional Transport", "single cell RNA", "mioflow"]
+authors = [
+  {name = "xingzhis", email = "xingzhi.sun@yale.edu"},
+  {name = "bjoaofelipe", email = "joaofelipe.rocha@yale.edu"}
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    # "License :: Yale License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3 :: Only",
+]
+version = "0.1.4"
+dependencies = [
+    "numpy<=1.26.4",
+    "pandas",
+    "torch",
+    "torchsde",
+    "torchdiffeq",
+    "scikit-learn",
+    "scipy",
+    "matplotlib",
+    "seaborn",
+    "phate",
+    "graphtools",
+    "POT",  # Python Optimal Transport
+    "tqdm",
+    "pyyaml",
+]
+[tool.setuptools]
+packages = ["MIOFlow"]
