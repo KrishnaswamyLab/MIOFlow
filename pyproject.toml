@@ -23,7 +23,22 @@ classifiers = [
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3 :: Only",
 ]
-version = "0.1.1"
-dynamic = ["dependencies"]
+version = "0.1.2"
+dependencies = [
+    "numpy<=1.26.4",
+    "pandas",
+    "torch",
+    "torchsde",
+    "torchdiffeq",
+    "scikit-learn",
+    "scipy",
+    "matplotlib",
+    "seaborn",
+    "phate",
+    "graphtools",
+    "ot",  # Python Optimal Transport
+    "tqdm",
+    "pyyaml",
+]
 [tool.setuptools]
 packages = ["MIOFlow"]
