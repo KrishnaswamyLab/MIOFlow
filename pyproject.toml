@@ -23,7 +23,7 @@ classifiers = [
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3 :: Only",
 ]
-version = "0.1.2"
+version = "0.1.4"
 dependencies = [
     "numpy<=1.26.4",
     "pandas",
@@ -36,7 +36,7 @@ dependencies = [
     "seaborn",
     "phate",
     "graphtools",
-    "ot",  # Python Optimal Transport
+    "POT",  # Python Optimal Transport
     "tqdm",
     "pyyaml",
 ]
