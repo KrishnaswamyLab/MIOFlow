@@ -38,12 +38,13 @@ class ToyODE(nn.Module):
         activation='ReLU',
         scales=None,
         n_aug=2,
-        momentum_beta = 0.0
+        momentum_beta = 0.0,
+        condition_dims=0, # TODO: make it a dict instead of assuming first!
     ):
         super(ToyODE, self).__init__()
         steps = [feature_dims+1+n_aug, *layers, feature_dims]
         pairs = zip(steps, steps[1:])
-
+        self.condition_dim = condition_dims # TODO: make it a dict instead of assuming first!
         chain = list(itertools.chain(*list(zip(
             map(lambda e: nn.Linear(*e), pairs), 
             itertools.repeat(getattr(nn, activation)())

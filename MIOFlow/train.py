@@ -182,7 +182,7 @@ def train(
     
     model.train()
     
-    for batch in tqdm(range(n_batches)):
+    for batch in range(n_batches):
         
         # apply local loss
         if local_loss and not global_loss:
