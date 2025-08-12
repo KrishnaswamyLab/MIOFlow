@@ -116,9 +116,9 @@ def generate_plot_data(
         trajectories (float[float[]]): a list with shape `(n_bins, n_points, len(df.columns) - 1)`
             of the generated trajectories.
     '''
-    if logger: logger.info(f'Generating points')
+    # TODO: Correct the logger if logger: logger.info(f'Generating points')
     points = generate_points(model, df, n_points, sample_with_replacement, use_cuda, samples_key, None, autoencoder=autoencoder, recon=recon)
-    if logger: logger.info(f'Generating trajectories')
+    # TODO: Correct the logger if logger: logger.info(f'Generating trajectories')
     trajectories = generate_trajectories(model, df, n_trajectories, n_bins, sample_with_replacement, use_cuda, samples_key, autoencoder=autoencoder, recon=recon)
     return points, trajectories
 

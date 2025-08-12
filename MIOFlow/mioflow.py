@@ -1,3 +1,5 @@
+__all__ = ['MIOFlow']
+
 import numpy as np
 import pandas as pd
 import scanpy as sc
@@ -117,7 +119,7 @@ class MIOFlow:
         n_points: int = 1000,
         n_trajectories: int = 100,
         n_bins: int = 50,
-        
+
         **kwargs
     ):
         # Store input parameters
@@ -302,8 +304,6 @@ class MIOFlow:
         self.logger.info(f"Using CUDA: {self.model_config['use_cuda']}")
         
         try:
-
-            print(self.df)
             # Call the training_regimen function
             self.local_losses, self.batch_losses, self.globe_losses = training_regimen(
                 # Training structure
