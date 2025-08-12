@@ -6,7 +6,6 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 import joblib
 import os
-import hydra
 from omegaconf import DictConfig
 import shutil
 import copy
@@ -16,13 +15,6 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 
 from .phate_decoder import Decoder
-
-
-def load_config(config_path: str = "../conf_main", config_name: str = "config") -> DictConfig:
-    """Load Hydra config from path"""
-    with hydra.initialize(version_base="1.1", config_path=config_path):
-        cfg = hydra.compose(config_name=config_name)
-    return cfg
 
 
 def train(x: np.ndarray, y: np.ndarray, weights: np.ndarray, cfg: DictConfig, 
@@ -545,22 +537,3 @@ class PhateAutoencoder:
         })
 
         return DictConfig(decoder_config), DictConfig(reducer_config)
-
-@hydra.main(config_path="../conf_main", config_name="config", version_base="1.1")
-def main(cfg: DictConfig):
-    # Load data from npy files
-    x_phate = np.load(cfg.data.phate_path)
-    x_pca = np.load(cfg.data.pca_path)
-    x_phate_vis = np.load(cfg.data.phate_vis_path)
-    
-    # Load weights if specified
-    weights = None
-    if hasattr(cfg.data, 'weights_path') and cfg.data.weights_path:
-        weights = np.load(cfg.data.weights_path)
-
-    # Train model
-    changer = PhateAutoencoder.train(x_phate, x_pca, x_phate_vis, weights, cfg.save.model_dir, cfg.training.accelerator, cfg.training.batch_size, cfg.training.max_epochs, cfg.model.lr, cfg.model.layer_widths, cfg.logging.logger, cfg.logging.wandb_project, cfg.logging.run_name, cfg.model.noise_std)
-
-
-if __name__ == "__main__":
-    main()
