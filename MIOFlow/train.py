@@ -347,11 +347,9 @@ def train(
         else:
             raise ValueError('A form of loss must be specified.')
                      
-    print_loss = globe_losses if global_loss else batch_losses 
-    if logger is None:      
-        tqdm.write(f'Train loss: {np.round(np.mean(print_loss), 5)}')
-    else:
-        logger.info(f'Train loss: {np.round(np.mean(print_loss), 5)}')
+    # print_loss = globe_losses if global_loss else batch_losses 
+    # if logger is not None:      
+    #     logger.info(f'Train loss: {np.round(np.mean(print_loss), 5)}')
     return local_losses, batch_losses, globe_losses
 
 def train_ae(
