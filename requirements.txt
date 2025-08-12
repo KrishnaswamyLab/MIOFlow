@@ -19,6 +19,7 @@ pot
 phate 
 pyyaml
 tqdm
+scanpy
 
 # --------- notebook reqs -------- #
 seaborn>=0.12.2
