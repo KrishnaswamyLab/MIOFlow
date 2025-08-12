@@ -22,6 +22,6 @@ tqdm
 scanpy
 
 # --------- notebook reqs -------- #
-seaborn>=0.12.2
+seaborn
 pandas
 ipywidgets

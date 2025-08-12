@@ -1,4 +1,4 @@
-name: sklab-mioflow
+name: mioflow
 dependencies:
   - pot
   - phate
