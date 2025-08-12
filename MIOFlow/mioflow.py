@@ -181,7 +181,6 @@ class MIOFlow:
         self.model = None
         self.trajectories = {}
         self.pseudotime = None
-        self.df = None
         self.min_count = None
         
         # Set up logging
@@ -190,9 +189,9 @@ class MIOFlow:
         # Validate inputs
         self._validate_inputs()
         
-        # Prepare data
-        if self.df is None:
-            self._prepare_data()
+        # # Prepare data
+        # if self.df is None:
+        #     self._prepare_data()
         
         self.logger.info(f"MIOFlow initialized with {self.adata.n_obs} cells and {self.adata.n_vars} genes")
         self.logger.info(f"Output directory: {self.output_config['exp_dir']}")
@@ -253,29 +252,18 @@ class MIOFlow:
 
     def _initialize_model(self):
         """Initialize the model for training."""
-        
-        # Get model config if passed, otherwise use default
-        model_config = getattr(self, 'model_config_dict', {
-            'layers': [16, 32, 16],
-            'activation': 'CELU', 
-            'scales': None,
-            'use_cuda': self.model_config['use_cuda']
-        })
+    
         
         self.model = make_model(
             feature_dims=(len(self.df.columns) - 1),  # Input dimensions (excluding 'samples' column)
-            layers=model_config['layers'],
-            activation=model_config['activation'],
-            scales=model_config['scales'],
-            use_cuda=model_config['use_cuda'],
+            layers=self.model_config['layers'],
+            activation=self.model_config['activation'],
+            scales=self.model_config['scales'],
+            use_cuda=self.model_config['use_cuda'],
         )
-        
-        if self.model_config['use_cuda'] and self.model is not None:
-            self.model = self.model.cuda()
     
     def fit(
         self,
-        num_epochs: Optional[int] = None,
         debug_axes: Optional[Any] = None,
         **fit_kwargs
     ):
@@ -284,8 +272,6 @@ class MIOFlow:
         
         Parameters
         ----------
-        num_epochs : int, optional
-            Number of training epochs (overrides n_epochs from initialization)
         debug_axes : matplotlib.axes.Axes, optional
             Axes for plotting debug information
         **fit_kwargs : dict
@@ -298,22 +284,15 @@ class MIOFlow:
         """
         self.logger.info("Starting MIOFlow fitting")
         
-        # Override configs with fit-time parameters
-        if num_epochs is not None:
-            self.training_structure['n_epochs'] = num_epochs
-        
-        # Update configs with any fit_kwargs
-        for config_dict in [self.training_structure, self.output_config, self.model_config, 
-                           self.optimization_config, self.data_config, self.advanced_config]:
-            for key, value in fit_kwargs.items():
-                if key in config_dict:
-                    config_dict[key] = value
+        # # Update configs with any fit_kwargs
+        # for config_dict in [self.training_structure, self.output_config, self.model_config, 
+        #                    self.optimization_config, self.data_config, self.advanced_config]:
+        #     for key, value in fit_kwargs.items():
+        #         if key in config_dict:
+        #             config_dict[key] = value
         
         # Initialize model
         self._initialize_model()
-        
-        if self.model is None:
-            raise ValueError("Model not initialized. Please implement _initialize_model method.")
         
         # Prepare optimizer and criterion
         optimizer = torch.optim.AdamW(self.model.parameters())
@@ -323,7 +302,9 @@ class MIOFlow:
         self.logger.info(f"Using CUDA: {self.model_config['use_cuda']}")
         
         try:
-            # Call the external training_regimen function
+
+            print(self.df)
+            # Call the training_regimen function
             self.local_losses, self.batch_losses, self.globe_losses = training_regimen(
                 # Training structure
                 n_local_epochs=self.training_structure['n_local_epochs'],
