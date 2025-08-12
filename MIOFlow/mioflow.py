@@ -317,15 +317,14 @@ class MIOFlow:
         
         # Prepare optimizer and criterion
         optimizer = torch.optim.AdamW(self.model.parameters())
-        # criterion = config_criterion(self.optimization_config['criterion_type'])
-        criterion = None  # TODO: Implement config_criterion or replace with your criterion
+        criterion = config_criterion(self.optimization_config['criterion_type'])
         
         self.logger.info(f"Training with structure: {self.training_structure}")
         self.logger.info(f"Using CUDA: {self.model_config['use_cuda']}")
         
         try:
             # Call the external training_regimen function
-            training_regimen(
+            self.local_losses, self.batch_losses, self.globe_losses = training_regimen(
                 # Training structure
                 n_local_epochs=self.training_structure['n_local_epochs'],
                 n_epochs=self.training_structure['n_epochs'],
@@ -369,11 +368,8 @@ class MIOFlow:
                 logger=self.logger,
             )
             
-            # Placeholder for actual training call
-            self.logger.info("Training regimen would be called here")
-            
-            # After training, extract results
-            self._extract_results()
+            # # After training, extract results
+            # self._extract_results()
             
             # Mark as fitted
             self.is_fitted = True
