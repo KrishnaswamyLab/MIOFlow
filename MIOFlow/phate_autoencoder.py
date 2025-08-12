@@ -68,12 +68,14 @@ def train(x: np.ndarray, y: np.ndarray, weights: np.ndarray, cfg: DictConfig,
         batch_size=cfg.training.batch_size,
         shuffle=True, 
         num_workers=cfg.training.num_workers,
+        persistent_workers=True,
         drop_last=cfg.training.drop_last
     )
     val_loader = DataLoader(
         val_ds, 
         batch_size=cfg.training.batch_size,
         shuffle=False, 
+        persistent_workers=True,
         num_workers=cfg.training.num_workers,
         drop_last=cfg.training.drop_last
     )
@@ -81,6 +83,7 @@ def train(x: np.ndarray, y: np.ndarray, weights: np.ndarray, cfg: DictConfig,
         test_ds, 
         batch_size=cfg.training.batch_size,
         shuffle=False, 
+        persistent_workers=True,
         num_workers=cfg.training.num_workers,
         drop_last=cfg.training.drop_last
     )
@@ -114,7 +117,7 @@ def train(x: np.ndarray, y: np.ndarray, weights: np.ndarray, cfg: DictConfig,
         mode=cfg.logging.monitor_mode,
         patience=cfg.training.early_stopping_patience,
         min_delta=cfg.training.early_stopping_min_delta,
-        verbose=True
+        verbose=False
     )
     callbacks.append(early_stopping)
 
@@ -221,7 +224,7 @@ class PhateAutoencoder:
               logger: str = "tensorboard",
               project_name: str = "PhateAutoencoder",
               run_name: str = None,
-              log_every_n_steps: int = 1,
+              log_every_n_steps: int = 0,
               # Decoder parameters (larger network, longer training)
               decoder_params: dict = None,
               # Dim reducer parameters (smaller network, shorter training, stronger regularization)

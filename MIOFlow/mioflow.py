@@ -18,7 +18,7 @@ from MIOFlow.train import train_ae, training_regimen
 
 from MIOFlow.geo import setup_distance
 from MIOFlow.exp import setup_exp
-from MIOFlow.eval import generate_plot_data
+from MIOFlow.eval import generate_points, generate_trajectories
 
 from MIOFlow.phate_autoencoder import PhateAutoencoder
 
@@ -84,7 +84,7 @@ class MIOFlow:
     def __init__(
         self,
         adata,
-        df = None,
+        input_df = None,
         obsm_key: str = "X_phate",
         start_node: Optional[Union[str, int]] = None,
         debug_level: str = 'info',
@@ -126,7 +126,12 @@ class MIOFlow:
     ):
         # Store input parameters
         self.adata = adata.copy() if hasattr(adata, 'copy') else adata
-        self.df = df
+
+        if input_df is None:
+            self._prepare_data()
+        else:
+            self.df = self._prepare_df(input_df)
+
         self.obsm_key = obsm_key
         self.start_node = start_node
         self.debug_level = debug_level
@@ -193,10 +198,6 @@ class MIOFlow:
         # Validate inputs
         self._validate_inputs()
         
-        # # Prepare data
-        # if self.df is None:
-        #     self._prepare_data()
-        
         self.logger.info(f"MIOFlow initialized with {self.adata.n_obs} cells and {self.adata.n_vars} genes")
         self.logger.info(f"Output directory: {self.output_config['exp_dir']}")
     
@@ -226,7 +227,25 @@ class MIOFlow:
         Path(self.output_config['exp_dir']).mkdir(parents=True, exist_ok=True)
         
         self.logger.debug("Input validation completed successfully")
-    
+
+    def _prepare_df(self, input_df):
+        """Normalize the dataframe, save the variables nencessary for decoding"""
+        # Get embedding columns dynamically
+        embed_cols = [col for col in input_df.columns if col.startswith('d') and col[1:].isdigit()] # Retrieve the columns that start with a d
+        embedding = input_df[embed_cols].values
+
+        self.mean_vals = np.mean(embedding, axis=0)
+
+        std_vals = np.std(embedding, axis=0)
+        self.std_vals = np.where(std_vals == 0, 1, std_vals)  # Prevent division by zero
+        
+        normalized = (embedding - self.mean_vals) / std_vals
+        # We create the dataframe with the normalized data and the samples
+        output_df = pd.DataFrame(normalized, columns=[f'd{i+1}' for i in range(normalized.shape[1])])
+        output_df['samples'] = input_df['samples']
+        return output_df
+
+
     def _prepare_data(self):
         """Prepare data in the format expected by training_regimen."""
         self.logger.debug("Preparing data for training")
@@ -305,10 +324,10 @@ class MIOFlow:
         
         self.logger.info(f"Training with structure: {self.training_structure}")
         self.logger.info(f"Using CUDA: {self.model_config['use_cuda']}")
+
         try:
             # Compute the phate autoencoder
-            print(f"PHATE_DIM : {self.adata.obsm['X_phate'].shape}")
-            print(f"PCA DIM :{self.adata.obsm['X_pca'].shape}")
+            print(f"Training PHATE Autoencoder with {self.adata.obsm['X_phate'].shape[0]} cells and {self.adata.obsm['X_phate'].shape[1]} dimensions")
 
             self.phate_autoencoder = PhateAutoencoder.train(self.adata.obsm['X_phate'], 
                                                             self.adata.obsm['X_pca'], 
@@ -321,6 +340,8 @@ class MIOFlow:
             raise
 
         try:
+            print(f"Training MIOFlow trajectory inference model")
+
             # Call the training_regimen function
             self.local_losses, self.batch_losses, self.globe_losses = training_regimen(
                 # Training structure
@@ -367,7 +388,7 @@ class MIOFlow:
             )
             
             # # After training, extract results
-            # self._extract_results()
+            self._extract_results()
             
             # Mark as fitted
             self.is_fitted = True
@@ -384,45 +405,54 @@ class MIOFlow:
         """Extract results from the training process."""
         self.logger.debug("Extracting training results")
         
-        # TODO: Extract trajectories and pseudotime from trained model
-        # This will depend on your specific model outputs
+        # TODO: Correct the logger if logger: logger.info(f'Generating points')
+        self.points = generate_points(self.model, 
+                                      self.df,
+                                      n_points=self.output_config['n_points'])
         
-        # Placeholder implementation
-        self.trajectories = {
-            'paths': [],
-            'weights': [],
-            'nodes': sorted(self.df.samples.unique())
-        }
+        # TODO: Correct the logger if logger: logger.info(f'Generating trajectories')
+        self.trajectories = generate_trajectories(self.model, 
+                                                  self.df,
+                                                  n_bins=self.output_config['n_bins'],
+                                                  n_trajectories=self.output_config['n_trajectories'])
         
-        # Compute pseudotime (placeholder)
-        np.random.seed(42)
-        self.pseudotime = np.random.random(self.adata.n_obs)
-        self.adata.obs['mioflow_pseudotime'] = self.pseudotime
     
-    def predict_trajectory(self, new_data: Optional[Any] = None):
+    def decode_to_gene_space(self) -> np.ndarray:
         """
-        Predict trajectory assignment for new data or return fitted trajectories.
+        Decode trajectory points to gene space.
         
         Parameters
         ----------
-        new_data : AnnData, optional
-            New data to predict trajectories for. If None, returns fitted trajectories.
         
         Returns
         -------
-        dict
-            Dictionary containing trajectory predictions
+        np.ndarray
+            Decoded trajectory points in gene space
         """
         if not self.is_fitted:
-            raise ValueError("Model must be fitted before prediction. Call fit() first.")
-        
-        if new_data is None:
-            return self.trajectories
-        
-        # TODO: Implement prediction for new data using trained model
-        self.logger.info("Predicting trajectories for new data")
-        
-        return {}
+            raise ValueError("Model must be fitted before decoding. Call fit() first.")
+
+        # We need to account for the std and mean in the trajectories.
+        denormalized_trajectories = self.trajectories * self.std_vals + self.mean_vals
+
+        traj_shapes = denormalized_trajectories.shape
+        traj_flat = denormalized_trajectories.reshape(-1, denormalized_trajectories.shape[-1])
+
+        traj_pca = self.phate_autoencoder.phate2pca(traj_flat)
+
+        # # Here traj_pca is a 2D array with shape (n_time_points,n_trajectories, n_components)
+        traj_pca = traj_pca.reshape(traj_shapes[0], traj_shapes[1], -1)
+        # Here we compute the decoded trajectories in the original space
+        # traj_pca is a 3D array with shape (n_time_points, n_trajectories, n_components)
+        # We reshape it to have shape (n_time_points * n_trajectories, n_components)
+
+        trajectories_all_points = traj_pca.reshape(-1, traj_pca.shape[-1])
+        X_reconstructed = np.array((trajectories_all_points @ self.adata.varm['PCs'].T) + self.adata.X.mean(axis=0))
+
+        #X_reconstructed have every point in our trajectory back in gene space
+        self.trajectories_gene_space = X_reconstructed.reshape(denormalized_trajectories.shape[0], denormalized_trajectories.shape[1], -1)
+
+        return self.trajectories_gene_space
     
     def plot_trajectories(self, **plot_kwargs):
         """
