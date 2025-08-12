@@ -189,9 +189,9 @@ class NoisyDataset(torch.utils.data.Dataset):
             return noisy_x, self.y[idx], self.weights.expand(len(self.x), -1)[idx]
         return noisy_x, self.y[idx]
 
-class DimChanger:
+class PhateAutoencoder:
     def __init__(self, decoder, dim_reducer, phate_scaler, phate_vis_scaler):
-        """Initialize DimChanger with trained models and scalers"""
+        """Initialize PhateAutoencoder with trained models and scalers"""
         self.decoder = decoder
         self.dim_reducer = dim_reducer
         self.phate_scaler = phate_scaler
@@ -219,7 +219,7 @@ class DimChanger:
               train_ratio: float = 0.7,
               val_ratio: float = 0.15,
               logger: str = "tensorboard",
-              project_name: str = "dimchanger",
+              project_name: str = "PhateAutoencoder",
               run_name: str = None,
               log_every_n_steps: int = 1,
               # Decoder parameters (larger network, longer training)
@@ -229,9 +229,9 @@ class DimChanger:
               # Noise parameters
               decoder_noise_std: float = 0.1,  # Standard deviation of noise for decoder
               reducer_noise_std: float = 0.2,  # Standard deviation of noise for reducer
-              ) -> "DimChanger":
+              ) -> "PhateAutoencoder":
         """
-        Train a new DimChanger model with optional partial training.
+        Train a new PhateAutoencoder model with optional partial training.
         
         Args:
             x_phate: PHATE embeddings (required)
@@ -271,7 +271,7 @@ class DimChanger:
                 scheduler_min_lr: float = 1e-6
             
         Returns:
-            DimChanger: Model with trained/loaded components
+            PhateAutoencoder: Model with trained/loaded components
         """
         # Input validation
         if train_decoder and x_pca is None:
@@ -355,15 +355,15 @@ class DimChanger:
         return cls(decoder, dim_reducer, phate_scaler, phate_vis_scaler)
 
     @classmethod
-    def load(cls, model_dir: str) -> "DimChanger":
+    def load(cls, model_dir: str) -> "PhateAutoencoder":
         """
-        Load a trained DimChanger model from directory.
+        Load a trained PhateAutoencoder model from directory.
         
         Args:
             model_dir: Directory containing all model files
             
         Returns:
-            DimChanger: Loaded model
+            PhateAutoencoder: Loaded model
         """
         # Load models and scalers from the same directory
         if os.path.exists(os.path.join(model_dir, "decoder.ckpt")):
@@ -556,7 +556,7 @@ def main(cfg: DictConfig):
         weights = np.load(cfg.data.weights_path)
 
     # Train model
-    changer = DimChanger.train(x_phate, x_pca, x_phate_vis, weights, cfg.save.model_dir, cfg.training.accelerator, cfg.training.batch_size, cfg.training.max_epochs, cfg.model.lr, cfg.model.layer_widths, cfg.logging.logger, cfg.logging.wandb_project, cfg.logging.run_name, cfg.model.noise_std)
+    changer = PhateAutoencoder.train(x_phate, x_pca, x_phate_vis, weights, cfg.save.model_dir, cfg.training.accelerator, cfg.training.batch_size, cfg.training.max_epochs, cfg.model.lr, cfg.model.layer_widths, cfg.logging.logger, cfg.logging.wandb_project, cfg.logging.run_name, cfg.model.noise_std)
 
 
 if __name__ == "__main__":

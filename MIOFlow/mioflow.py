@@ -20,6 +20,8 @@ from MIOFlow.geo import setup_distance
 from MIOFlow.exp import setup_exp
 from MIOFlow.eval import generate_plot_data
 
+from MIOFlow.phate_autoencoder import PhateAutoencoder
+
 class MIOFlow:
     """
     MIOFlow: Manifold Interpolating Optimal-Transport Flows for Trajectory Inference.
@@ -230,6 +232,7 @@ class MIOFlow:
         self.logger.debug("Preparing data for training")
         
         # Create a numerical bin for each unique value
+        #TODO: change day to be an external variable
         self.adata.obs['discrete_time'], _ = pd.factorize(self.adata.obs['day'])
         
         # Now lets create the data structure that mioflows works on top
@@ -286,7 +289,7 @@ class MIOFlow:
         """
         self.logger.info("Starting MIOFlow fitting")
         
-        # # Update configs with any fit_kwargs
+        # #TODO: Verify this code. Update configs with any fit_kwargs
         # for config_dict in [self.training_structure, self.output_config, self.model_config, 
         #                    self.optimization_config, self.data_config, self.advanced_config]:
         #     for key, value in fit_kwargs.items():
@@ -302,7 +305,21 @@ class MIOFlow:
         
         self.logger.info(f"Training with structure: {self.training_structure}")
         self.logger.info(f"Using CUDA: {self.model_config['use_cuda']}")
-        
+        try:
+            # Compute the phate autoencoder
+            print(f"PHATE_DIM : {self.adata.obsm['X_phate'].shape}")
+            print(f"PCA DIM :{self.adata.obsm['X_pca'].shape}")
+
+            self.phate_autoencoder = PhateAutoencoder.train(self.adata.obsm['X_phate'], 
+                                                            self.adata.obsm['X_pca'], 
+                                                            None, 
+                                                            self.adata.uns['pca']['variance_ratio'], 
+                                                            save_dir=self.output_config['exp_dir'],
+                                                            train_reducer=False)
+        except Exception as e:
+            self.logger.error(f"Phate Autoencoder Failed: {str(e)}")
+            raise
+
         try:
             # Call the training_regimen function
             self.local_losses, self.batch_losses, self.globe_losses = training_regimen(
