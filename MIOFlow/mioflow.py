@@ -408,7 +408,9 @@ class MIOFlow:
         # TODO: Correct the logger if logger: logger.info(f'Generating points')
         self.points = generate_points(self.model, 
                                       self.df,
-                                      n_points=self.output_config['n_points'])
+                                      n_points=self.output_config['n_points'],
+                                      use_cuda=self.model_config['use_cuda'],
+                                      )
         
         # TODO: Correct the logger if logger: logger.info(f'Generating trajectories')
         self.trajectories = generate_trajectories(self.model, 
