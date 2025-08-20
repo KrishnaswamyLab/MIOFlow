@@ -7,7 +7,6 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 import joblib
 import os
-import hydra
 from omegaconf import DictConfig
 
 import torch.nn as nn
@@ -228,7 +227,6 @@ def predict(x: np.ndarray, checkpoint_path: str, scaler_path: str, device: str =
     
     return y_pred.cpu().numpy()
 
-@hydra.main(config_path="../conf", config_name="config", version_base="1.1")
 def main(cfg: DictConfig):
     # Load data from npy files
     x = np.load(cfg.data.x_path)

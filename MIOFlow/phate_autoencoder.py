@@ -26,7 +26,6 @@ def train(x: np.ndarray, y: np.ndarray, weights: np.ndarray, cfg: DictConfig,
         x: Input data, already scaled
         y: Target data
         weights: Optional weights for weighted loss (can be None)
-        cfg: Hydra configuration object
         metric_prefix: Prefix for logged metrics
         noise_std: Standard deviation of noise to add to input
         
