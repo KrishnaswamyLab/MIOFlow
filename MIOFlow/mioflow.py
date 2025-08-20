@@ -406,18 +406,29 @@ class MIOFlow:
         self.logger.debug("Extracting training results")
         
         # TODO: Correct the logger if logger: logger.info(f'Generating points')
+        #TODO: verify the parameters passed to each of this functions
         self.points = generate_points(self.model, 
                                       self.df,
                                       n_points=self.output_config['n_points'],
                                       use_cuda=self.model_config['use_cuda'],
+                                      sample_with_replacement=False,
+                                      use_cuda=self.model_config['use_cuda'],
+                                      samples_key='samples',
+                                      sample_time=None, 
+                                      autoencoder=None, 
+                                      recon=False
                                       )
         
         # TODO: Correct the logger if logger: logger.info(f'Generating trajectories')
         self.trajectories = generate_trajectories(self.model, 
                                                   self.df,
+                                                  n_trajectories=self.output_config['n_trajectories'],
                                                   n_bins=self.output_config['n_bins'],
-                                                  n_trajectories=self.output_config['n_trajectories'])
-        
+                                                  sample_with_replacement=False,
+                                                  use_cuda=self.model_config['use_cuda'],
+                                                  samples_key='samples',
+                                                  autoencoder=self.advanced_config['autoencoder'],
+                                                  recon=False)
     
     def decode_to_gene_space(self) -> np.ndarray:
         """
