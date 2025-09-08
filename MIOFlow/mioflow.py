@@ -412,7 +412,6 @@ class MIOFlow:
                                       n_points=self.output_config['n_points'],
                                       use_cuda=self.model_config['use_cuda'],
                                       sample_with_replacement=False,
-                                      use_cuda=self.model_config['use_cuda'],
                                       samples_key='samples',
                                       sample_time=None, 
                                       autoencoder=None, 
