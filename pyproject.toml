@@ -1,6 +1,6 @@
 [project]
 name = "MIOFlow"
-version = "0.1.8"
+version = "0.1.9"
 description = "MIOFlow is a Python package for modeling and analyzing single-cell RNA-seq data using optimal flows."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -45,10 +45,15 @@ dependencies = [
 [tool.setuptools]
 packages = ["MIOFlow"]
 
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [dependency-groups]
 dev = [
     "ipykernel>=6.29.5",
 ]
+
 
 # [tool.uv]
 # package = true
