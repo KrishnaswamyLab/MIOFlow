@@ -197,10 +197,13 @@ def train_mioflow(
                 t_interval = torch.tensor([t_start, t_end], device=device, dtype=torch.float32)
                 X_pred = odeint(model, X_start, t_interval)[1]  # Get final time point
 
+                # Create denser time grid for energy loss
+                energy_t_seq = torch.linspace(t_start, t_end, energy_time_steps, device=device, dtype=torch.float32)
+
                 # Compute losses
                 ot_loss_val = ot_loss(X_pred, X_end)
                 density_loss_val = density_loss(X_pred, X_end)
-                energy_loss_val = energy_loss(model, X_start, t_interval)
+                energy_loss_val = energy_loss(model, X_start, energy_t_seq)
 
                 # Total loss
                 total_loss = (lambda_ot * ot_loss_val +

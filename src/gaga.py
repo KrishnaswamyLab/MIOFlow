@@ -1,6 +1,6 @@
 """
-Simplified GAGA (Geometric Autoencoder) implementation for educational purposes.
-Combines autoencoder with geometric distance preservation.
+Combined GAGA (Geometric Autoencoder) and DAE (Denoising Autoencoder) implementation.
+Simplified for educational purposes with two-phase training.
 """
 
 import torch
@@ -66,6 +66,71 @@ class Autoencoder(nn.Module):
         return self.decode(z)
 
 
+def train_gaga_two_phase(
+    model: Autoencoder,
+    train_loader: torch.utils.data.DataLoader,
+    encoder_epochs: int,
+    decoder_epochs: int,
+    learning_rate: float = 1e-3,
+    device: str = "cuda" if torch.cuda.is_available() else "cpu",
+    val_loader: Optional[torch.utils.data.DataLoader] = None,
+    dist_weight_phase1: float = 1.0,
+    recon_weight_phase2: float = 1.0
+) -> dict:
+    """
+    Two-phase training: Phase 1 trains encoder (decoder frozen) for distance preservation,
+    Phase 2 trains decoder (encoder frozen) for reconstruction.
+
+    Args:
+        model: The GAGA autoencoder model
+        train_loader: DataLoader with batches containing 'x' (data) and 'd' (distances)
+        encoder_epochs: Number of epochs for phase 1 (encoder training)
+        decoder_epochs: Number of epochs for phase 2 (decoder training)
+        learning_rate: Learning rate for optimizer
+        device: Device to train on
+        val_loader: Optional validation DataLoader
+        dist_weight_phase1: Weight for distance preservation loss in phase 1
+        recon_weight_phase2: Weight for reconstruction loss in phase 2
+
+    Returns:
+        Combined training history from both phases
+    """
+    print("Phase 1: Training encoder (decoder frozen) for distance preservation")
+    phase1_history = train_gaga(
+        model=model,
+        train_loader=train_loader,
+        num_epochs=encoder_epochs,
+        learning_rate=learning_rate,
+        device=device,
+        val_loader=val_loader,
+        recon_weight=0.0,
+        dist_weight=dist_weight_phase1,
+        freeze_decoder=True,
+        freeze_encoder=False
+    )
+
+    print("\nPhase 2: Training decoder (encoder frozen) for reconstruction")
+    phase2_history = train_gaga(
+        model=model,
+        train_loader=train_loader,
+        num_epochs=decoder_epochs,
+        learning_rate=learning_rate,
+        device=device,
+        val_loader=val_loader,
+        recon_weight=recon_weight_phase2,
+        dist_weight=0.0,
+        freeze_decoder=False,
+        freeze_encoder=True
+    )
+
+    combined_history = {
+        'phase1': phase1_history,
+        'phase2': phase2_history
+    }
+
+    return combined_history
+
+
 def train_gaga(
     model: Autoencoder,
     train_loader: torch.utils.data.DataLoader,
@@ -74,7 +139,9 @@ def train_gaga(
     device: str = "cuda" if torch.cuda.is_available() else "cpu",
     val_loader: Optional[torch.utils.data.DataLoader] = None,
     recon_weight: float = 1.0,
-    dist_weight: float = 1.0
+    dist_weight: float = 1.0,
+    freeze_encoder: bool = False,
+    freeze_decoder: bool = False
 ) -> dict:
     """
     Train GAGA model with reconstruction and distance preservation losses.
@@ -88,25 +155,38 @@ def train_gaga(
         val_loader: Optional validation DataLoader
         recon_weight: Weight for reconstruction loss
         dist_weight: Weight for distance preservation loss
+        freeze_encoder: Whether to freeze encoder parameters
+        freeze_decoder: Whether to freeze decoder parameters
 
     Returns:
         Training history dictionary
     """
     model = model.to(device)
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+
+    # Freeze specified parts of the model
+    for param in model.encoder.parameters():
+        param.requires_grad = not freeze_encoder
+    for param in model.decoder.parameters():
+        param.requires_grad = not freeze_decoder
+
+    optimizer = optim.Adam([p for p in model.parameters() if p.requires_grad], lr=learning_rate)
     criterion = nn.MSELoss()
 
     history = {
         'train_loss': [],
         'val_loss': [],
         'recon_loss': [],
-        'dist_loss': []
+        'dist_loss': [],
+        'val_recon_loss': [],
+        'val_dist_loss': []
     }
 
     print(f'Training GAGA on device: {device}')
+    print(f'Encoder frozen: {freeze_encoder}, Decoder frozen: {freeze_decoder}')
     print(f'Reconstruction weight: {recon_weight}, Distance weight: {dist_weight}')
 
-    for epoch in tqdm(range(num_epochs), desc='Epochs'):
+    epoch_pbar = tqdm(range(num_epochs), desc='Epochs')
+    for epoch in epoch_pbar:
         # Training phase
         model.train()
         train_loss = 0.0
@@ -175,13 +255,29 @@ def train_gaga(
                     val_dist_loss_sum += dist_loss.item()
 
             avg_val_loss = val_loss / len(val_loader)
-            history['val_loss'].append(avg_val_loss)
+            avg_val_recon_loss = val_recon_loss_sum / len(val_loader)
+            avg_val_dist_loss = val_dist_loss_sum / len(val_loader)
 
-            tqdm.write(f'Epoch {epoch+1:3d}: Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}, '
-                      f'Recon: {avg_recon_loss:.4f}, Dist: {avg_dist_loss:.4f}')
+            history['val_loss'].append(avg_val_loss)
+            history['val_recon_loss'].append(avg_val_recon_loss)
+            history['val_dist_loss'].append(avg_val_dist_loss)
+
+            epoch_pbar.set_postfix({
+                'train_loss': f'{avg_train_loss:.4f}',
+                'val_loss': f'{avg_val_loss:.4f}',
+                'recon': f'{avg_recon_loss:.4f}',
+                'dist': f'{avg_dist_loss:.4f}'
+            })
         else:
-            tqdm.write(f'Epoch {epoch+1:3d}: Train Loss: {avg_train_loss:.4f}, '
-                      f'Recon: {avg_recon_loss:.4f}, Dist: {avg_dist_loss:.4f}')
+            epoch_pbar.set_postfix({
+                'train_loss': f'{avg_train_loss:.4f}',
+                'recon': f'{avg_recon_loss:.4f}',
+                'dist': f'{avg_dist_loss:.4f}'
+            })
+
+    # Unfreeze all parameters after training
+    for param in model.parameters():
+        param.requires_grad = True
 
     return history
 
