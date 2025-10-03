@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.optim import lr_scheduler
 from torch.utils.data import Dataset, DataLoader
 import ot
 from torchdiffeq import odeint
@@ -138,7 +139,12 @@ def train_mioflow(
     lambda_ot: float = 1.0,
     lambda_density: float = 0.1,
     lambda_energy: float = 0.01,
-    energy_time_steps: int = 10
+    energy_time_steps: int = 10,
+    scheduler_type: str = None,  # 'step', 'exponential', 'cosine', or None
+    scheduler_step_size: int = 30,  # For StepLR
+    scheduler_gamma: float = 0.5,  # Decay factor for schedulers
+    scheduler_t_max: int = None,  # For CosineAnnealingLR, defaults to num_epochs
+    scheduler_min_lr: float = 0.0  # Minimum learning rate for cosine scheduler
 ) -> Dict:
     """
     Train MioFlow model.
@@ -155,12 +161,27 @@ def train_mioflow(
         lambda_density: Weight for density loss
         lambda_energy: Weight for energy regularization
         energy_time_steps: Number of time steps for energy evaluation
+        scheduler_type: Learning rate scheduler type ('step', 'exponential', 'cosine', or None)
+        scheduler_step_size: Step size for StepLR scheduler
+        scheduler_gamma: Decay factor for schedulers
+        scheduler_t_max: Maximum number of iterations for CosineAnnealingLR (defaults to num_epochs)
+        scheduler_min_lr: Minimum learning rate for cosine scheduler (default 0.0)
 
     Returns:
         Training history
     """
     model = model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+
+    # Create learning rate scheduler if specified
+    scheduler = None
+    if scheduler_type == 'step':
+        scheduler = lr_scheduler.StepLR(optimizer, step_size=scheduler_step_size, gamma=scheduler_gamma)
+    elif scheduler_type == 'exponential':
+        scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=scheduler_gamma)
+    elif scheduler_type == 'cosine':
+        t_max = scheduler_t_max if scheduler_t_max is not None else num_epochs
+        scheduler = lr_scheduler.CosineAnnealingLR(optimizer, T_max=t_max, eta_min=scheduler_min_lr)
 
     history = {
         'epoch': [],
@@ -197,18 +218,25 @@ def train_mioflow(
                 t_interval = torch.tensor([t_start, t_end], device=device, dtype=torch.float32)
                 X_pred = odeint(model, X_start, t_interval)[1]  # Get final time point
 
-                # Create denser time grid for energy loss
-                energy_t_seq = torch.linspace(t_start, t_end, energy_time_steps, device=device, dtype=torch.float32)
+                # Compute losses (only when weights are non-zero)
+                total_loss = 0.0
+                ot_loss_val = torch.tensor(0.0, device=device)
+                density_loss_val = torch.tensor(0.0, device=device)
+                energy_loss_val = torch.tensor(0.0, device=device)
 
-                # Compute losses
-                ot_loss_val = ot_loss(X_pred, X_end)
-                density_loss_val = density_loss(X_pred, X_end)
-                energy_loss_val = energy_loss(model, X_start, energy_t_seq)
+                if lambda_ot > 0:
+                    ot_loss_val = ot_loss(X_pred, X_end)
+                    total_loss += lambda_ot * ot_loss_val
 
-                # Total loss
-                total_loss = (lambda_ot * ot_loss_val +
-                            lambda_density * density_loss_val +
-                            lambda_energy * energy_loss_val)
+                if lambda_density > 0:
+                    density_loss_val = density_loss(X_pred, X_end)
+                    total_loss += lambda_density * density_loss_val
+
+                if lambda_energy > 0:
+                    # Create denser time grid for energy loss only when needed
+                    energy_t_seq = torch.linspace(t_start, t_end, energy_time_steps, device=device, dtype=torch.float32)
+                    energy_loss_val = energy_loss(model, X_start, energy_t_seq)
+                    total_loss += lambda_energy * energy_loss_val
 
                 # Optimize
                 optimizer.zero_grad()
@@ -246,17 +274,22 @@ def train_mioflow(
                     X_pred = X_pred[indices]
                     X_true = X_true[indices]
 
-                ot_loss_val = ot_loss(X_pred, X_true)
-                density_loss_val = density_loss(X_pred, X_true)
-                total_loss += ot_loss_val + lambda_density * density_loss_val
-                ot_loss_total += ot_loss_val.item()
-                density_loss_total += density_loss_val.item()
+                if lambda_ot > 0:
+                    ot_loss_val = ot_loss(X_pred, X_true)
+                    total_loss += lambda_ot * ot_loss_val
+                    ot_loss_total += ot_loss_val.item()
+
+                if lambda_density > 0:
+                    density_loss_val = density_loss(X_pred, X_true)
+                    total_loss += lambda_density * density_loss_val
+                    density_loss_total += density_loss_val.item()
 
             # Energy loss on full trajectory
-            energy_t_seq = torch.linspace(full_t_seq[0], full_t_seq[-1], energy_time_steps, device=device)
-            energy_loss_val = energy_loss(model, X_0, energy_t_seq)
-
-            total_loss += lambda_energy * energy_loss_val
+            energy_loss_val = 0.0
+            if lambda_energy > 0:
+                energy_t_seq = torch.linspace(full_t_seq[0], full_t_seq[-1], energy_time_steps, device=device)
+                energy_loss_val = energy_loss(model, X_0, energy_t_seq)
+                total_loss += lambda_energy * energy_loss_val
 
             # Optimize
             optimizer.zero_grad()
@@ -277,6 +310,10 @@ def train_mioflow(
         for key in epoch_losses:
             epoch_losses[key] /= num_batches
 
+        # Step the scheduler if specified
+        if scheduler is not None:
+            scheduler.step()
+
         # Record history
         history['epoch'].append(epoch + 1)
         history['total_loss'].append(epoch_losses['total'])
@@ -285,12 +322,19 @@ def train_mioflow(
         history['energy_loss'].append(epoch_losses['energy'])
 
         # Update progress bar with loss information
-        epoch_pbar.set_postfix({
+        postfix_dict = {
             'Total': f'{epoch_losses["total"]:.4f}',
             'OT': f'{epoch_losses["ot"]:.4f}',
             'Density': f'{epoch_losses["density"]:.4f}',
             'Energy': f'{epoch_losses["energy"]:.4f}'
-        })
+        }
+
+        # Add current learning rate if scheduler is used
+        if scheduler is not None:
+            current_lr = optimizer.param_groups[0]['lr']
+            postfix_dict['LR'] = f'{current_lr:.2e}'
+
+        epoch_pbar.set_postfix(postfix_dict)
 
     return history
 
