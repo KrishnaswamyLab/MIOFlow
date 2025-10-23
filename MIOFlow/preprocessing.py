@@ -1,11 +1,11 @@
+__all__ = ['compute_growth_rate', 'compute_pseudotime', 'spatial_features', 'cell_cycle_phase']
 
 
-
-def compute_growth_rate():
+def growth_rate():
     return 1.2
 
 
-def compute_pseudotime():
+def pseudotime():
     return 1.2
 
 def spatial_features():
@@ -16,5 +16,4 @@ def spatial_features():
 def cell_cycle_phase():
     return 1.2
 
-from mioflow.preprocessing import compute_growth_rate, compute_pseudotime, spatial_coordinates
 
