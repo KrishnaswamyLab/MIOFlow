@@ -19,7 +19,8 @@ from matplotlib.lines import Line2D
 
 # Local imports
 from .utils import to_np, get_times_from_groups
-from .constants import IMGS_DIR
+
+IMGS_DIR = './imgs'
 
 # Set seaborn color palette
 sns.color_palette("bright")

@@ -14,7 +14,7 @@ torch.random.manual_seed(SEED)
 # load package requirments
 from MIOFlow.losses import MMD_loss, OT_loss, Density_loss, Local_density_loss
 from MIOFlow.utils import group_extract, sample, to_np, generate_steps
-from MIOFlow.models import ToyModel, make_model
+from MIOFlow.core.models import ToyModel, make_model
 from MIOFlow.plots import plot_comparision, plot_losses
 from MIOFlow.train import train, train_emd
 from MIOFlow.constants import ROOT_DIR, DATA_DIR, NTBK_DIR, IMGS_DIR, RES_DIR

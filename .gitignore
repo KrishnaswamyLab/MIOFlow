@@ -200,9 +200,13 @@ cython_debug/
 # Notebook checkpoints
 notebooks/*/checkpoints/
 notebooks/*/tensorboard_logs/
+notebooks/data
+notebooks/cache
+
 
 checkpoints/
 tensorboard_logs/
 
 *.ckpt
 *.pkl
+

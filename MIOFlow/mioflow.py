@@ -1,586 +1,601 @@
-__all__ = ['MIOFlow']
+"""
+TODO:
+1. per-time-point loss weights
+2. deprecate local training
+3. add weight initialization
+4. test on gpu
+5. test different activation functions
+"""
+
+import logging
+from pathlib import Path
+from typing import List, Dict, Tuple, Optional
 
 import numpy as np
 import pandas as pd
-import scanpy as sc
 import torch
-from typing import Optional, Union, Dict, Any, List, Tuple
-import logging
-from pathlib import Path
+import torch.nn as nn
+import torch.optim as optim
+from torch.optim import lr_scheduler
+from torch.utils.data import Dataset
+from torchdiffeq import odeint
+from tqdm import tqdm
 
-# Import your training function (adjust import path as needed)
-# from your_training_module import training_regimen, config_criterion
+try:
+    from MIOFlow.core.models import ODEFunc
+    from MIOFlow.core.losses import ot_loss, density_loss, energy_loss
+except ImportError:
+    from core.models import ODEFunc
+    from core.losses import ot_loss, density_loss, energy_loss
 
-from MIOFlow.utils import generate_steps, set_seeds, config_criterion
-from MIOFlow.models import make_model, Autoencoder
-from MIOFlow.plots import plot_comparision, plot_losses
-from MIOFlow.train import train_ae, training_regimen
+class TimeSeriesDataset(Dataset):
+    """
+    Time series data with variable numbers of points per time step.
+    Stores a list of (X_t, t) tuples where X_t is [n_points, dim].
+    """
 
-from MIOFlow.geo import setup_distance
-from MIOFlow.exp import setup_exp
-from MIOFlow.eval import generate_points, generate_trajectories
+    def __init__(self, time_series_data: List[Tuple[np.ndarray, float]]):
+        self.time_series_data = time_series_data
+        self.times = [t for _, t in time_series_data]
 
-from MIOFlow.phate_autoencoder import PhateAutoencoder
+    def __len__(self):
+        return len(self.time_series_data) - 1
+
+    def __getitem__(self, idx):
+        X_t, t_start = self.time_series_data[idx]
+        X_t1, t_end = self.time_series_data[idx + 1]
+        return {
+            'X_start': torch.tensor(X_t, dtype=torch.float32),
+            'X_end': torch.tensor(X_t1, dtype=torch.float32),
+            't_start': t_start,
+            't_end': t_end,
+            'interval_idx': idx,
+        }
+
+    def get_time_sequence(self, start_idx=0, end_idx=None):
+        if end_idx is None:
+            end_idx = len(self.times)
+        return torch.tensor(self.times[start_idx:end_idx], dtype=torch.float32)
+
+    def get_initial_condition(self, start_idx=0):
+        X_0, _ = self.time_series_data[start_idx]
+        return torch.tensor(X_0, dtype=torch.float32)
+
 
 class MIOFlow:
     """
-    MIOFlow: Manifold Interpolating Optimal-Transport Flows for Trajectory Inference.
-    
+    Manifold Interpolating Optimal-Transport Flow for trajectory inference.
+
+    Typical workflow::
+
+        # 1. Train GAGA externally (see gaga.py)
+        gaga_model = Autoencoder(input_dim, latent_dim)
+        train_gaga_two_phase(gaga_model, dataloader, ...)
+
+        # 2. Pass the trained model + its input scaler to MIOFlow
+        mf = MIOFlow(
+            adata,
+            gaga_model=gaga_model,
+            gaga_input_scaler=scaler,   # StandardScaler fitted on X_pca
+            obs_time_key='time_bin',
+            n_epochs=100,
+        )
+        mf.fit()
+        mf.trajectories                   # (n_bins, n_trajectories, latent_dim)
+        mf.decode_to_gene_space()         # (n_bins, n_trajectories, n_genes)
+
     Parameters
     ----------
     adata : AnnData
-        Annotated data object containing single-cell expression data
-    obsm_key : str, optional (default: "X_phate")
-        Key in adata.obsm containing embedding coordinates (e.g., UMAP, PCA)
-    start_node : str or int, optional
-        Starting cell type or cluster for trajectory inference
-    debug_level : str, optional (default: 'info')
-        Logging level for debugging ('verbose', 'info', 'warning', 'error')
-    
-    Training Configuration Parameters
-    --------------------------------
-    n_local_epochs : int, optional (default: 10)
-        Number of local training epochs
-    n_epochs : int, optional (default: 100)
-        Number of main training epochs  
-    n_post_local_epochs : int, optional (default: 10)
-        Number of post-local training epochs
-    exp_dir : str, optional
-        Experiment output directory
-    criterion_type : str, optional (default: 'mse')
-        Type of loss criterion
-    use_cuda : bool, optional (default: True)
-        Whether to use CUDA if available
-    hold_one_out : bool, optional (default: False)
-        Whether to use hold-one-out validation
-    sample_size : int, optional (default: 1000)
-        Sample size for training
-    reverse_schema : bool, optional (default: False)
-        Whether to use reverse schema
-    reverse_n : int, optional (default: 0)
-        Number of reverse samples
-    use_density_loss : bool, optional (default: False)
-        Whether to use density loss
-    lambda_density : float, optional (default: 1.0)
-        Lambda parameter for density loss
-    autoencoder : bool, optional (default: False)
-        Whether to use autoencoder
-    use_emb : bool, optional (default: True)
-        Whether to use embeddings
-    use_gae : bool, optional (default: False)
-        Whether to use graph autoencoder
-    plot_every : int, optional (default: 10)
-        Plotting frequency during training
-    n_points : int, optional (default: 1000)
-        Number of points for visualization
-    n_trajectories : int, optional (default: 100)
-        Number of trajectories to generate
-    n_bins : int, optional (default: 50)
-        Number of bins for binning
-    **kwargs : dict
-        Additional parameters
+        Annotated data. Must contain ``obsm['X_pca']`` and ``varm['PCs']``
+        for gene-space decoding.
+    input_df : pd.DataFrame, optional
+        Pre-built DataFrame with columns ``d1, d2, ..., samples`` (embedding
+        already in latent space). When provided, GAGA encoding is skipped.
+    gaga_model : Autoencoder, optional
+        A trained GAGA ``Autoencoder`` from ``gaga.py``. Its encoder is used
+        to embed ``adata.obsm[gaga_input_key]`` into the latent space for ODE
+        training; its decoder is used in ``decode_to_gene_space()``.
+    gaga_input_key : str
+        Key in ``adata.obsm`` fed to the GAGA encoder (default: ``'X_pca'``).
+    gaga_input_scaler : sklearn-compatible scaler, optional
+        Scaler (e.g. ``StandardScaler``) already fitted on the data in
+        ``adata.obsm[gaga_input_key]``. Used to normalise inputs before
+        encoding and to inverse-transform decoder outputs.
+    obs_time_key : str
+        Column in ``adata.obs`` holding the time/group label
+        (default: ``'day'``).
+    model_config : dict, optional
+        Overrides for ODEFunc. Recognised keys: ``hidden_dim`` (int),
+        ``use_cuda`` (bool).
+    n_local_epochs : int
+        Epochs of local (per-interval) pre-training.
+    n_epochs : int
+        Epochs of global (full-trajectory) training.
+    n_post_local_epochs : int
+        Epochs of local fine-tuning after global training.
+    lambda_ot : float
+        Weight for the OT loss (default 1.0, set to 0 to disable).
+    use_density_loss : bool
+        Whether to include the density loss term.
+    lambda_density : float
+        Weight for the density loss.
+    lambda_energy : float
+        Weight for the energy regularisation.
+    energy_time_steps : int
+        Number of sub-steps used when computing the energy loss.
+    learning_rate : float
+        Adam learning rate.
+    sample_size : int, optional
+        Batch size (points sampled per time step). ``None`` → use all.
+    n_trajectories : int
+        Number of trajectories to generate after training.
+    n_bins : int
+        Number of time bins for trajectory integration.
+    scheduler_type : str, optional
+        LR scheduler: ``'step'``, ``'exponential'``, ``'cosine'``, or None.
     """
-    
+
     def __init__(
         self,
         adata,
-        input_df = None,
-        obsm_key: str = "X_phate",
-        start_node: Optional[Union[str, int]] = None,
+        input_df: Optional[pd.DataFrame] = None,
+        # GAGA autoencoder (trained externally)
+        gaga_model=None,
+        gaga_input_key: str = 'X_pca',
+        gaga_input_scaler=None,
+        obs_time_key: str = "time_bin",
         debug_level: str = 'info',
-        
-        # Training structure parameters
-        n_local_epochs: int = 10,
-        n_epochs: int = 100,
-        n_post_local_epochs: int = 10,
-        
-        # Output configuration
-        exp_dir: Optional[str] = None,
-        
-        # Optimization parameters
-        criterion_type: str = 'mse',
+        hidden_dim: float = 64,
         use_cuda: bool = True,
-        
-        # Data handling parameters
-        hold_one_out: bool = False,
-        sample_size: int = 1000,
-        reverse_schema: bool = False,
-        reverse_n: int = 0,
-        
-        # Loss configuration
+        # Training phases
+        n_local_epochs: int = 0,
+        n_epochs: int = 100,
+        n_post_local_epochs: int = 0,
+        # Loss
+        lambda_ot: float = 1.0,
         use_density_loss: bool = False,
-        lambda_density: float = 1.0,
-        
-        # Advanced features
-        autoencoder: bool = False,
-        use_emb: bool = True,
-        use_gae: bool = False,
-        
-        # Visualization and output
-        plot_every: int = 10,
-        n_points: int = 1000,
+        lambda_density: float = 0.1,
+        lambda_energy: float = 0.01,
+        energy_time_steps: int = 10,
+        learning_rate: float = 1e-3,
+        # Data
+        sample_size: Optional[int] = None,
+        # Output
+        exp_dir: str = '.',
         n_trajectories: int = 100,
-        n_bins: int = 50,
-
-        **kwargs
+        n_bins: int = 100,
+        # Scheduler
+        scheduler_type: Optional[str] = None,
+        scheduler_step_size: int = 30,
+        scheduler_gamma: float = 0.5,
+        scheduler_t_max: Optional[int] = None,
+        scheduler_min_lr: float = 0.0,
     ):
-        # Store input parameters
-        self.adata = adata.copy() if hasattr(adata, 'copy') else adata
+        self.adata = adata
+        self.gaga_autoencoder = gaga_model
+        self.gaga_input_key = gaga_input_key
+        self.gaga_input_scaler = gaga_input_scaler
+        self.obs_time_key = obs_time_key
 
-        if input_df is None:
-            self._prepare_data()
-        else:
-            self.df = self._prepare_df(input_df)
+        # Model config
+        self.hidden_dim = hidden_dim
+        self.device = 'cuda' if (use_cuda and torch.cuda.is_available()) else 'cpu'
 
-        self.obsm_key = obsm_key
-        self.start_node = start_node
-        self.debug_level = debug_level
-        
-        # Configure training structure
-        self.training_structure = {
-            'n_local_epochs': n_local_epochs,
-            'n_epochs': n_epochs,
-            'n_post_local_epochs': n_post_local_epochs
-        }
-        
-        # Configure output settings
-        self.output_config = {
-            'exp_dir': exp_dir or f"mioflow_output_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}",
-            'plot_every': plot_every,
-            'n_points': n_points,
-            'n_trajectories': n_trajectories,
-            'n_bins': n_bins
-        }
-        
-        # Configure model settings
-        self.model_config = {
-            'layers': [16, 32, 16],
-            'activation': 'CELU', 
-            'scales': None,
-            'use_cuda': use_cuda and torch.cuda.is_available()
-        }
-        
-        # Configure optimization
-        self.optimization_config = {
-            'criterion_type': criterion_type,
-            'use_density_loss': use_density_loss,
-            'lambda_density': lambda_density
-        }
-        
-        # Configure data handling
-        self.data_config = {
-            'hold_one_out': hold_one_out,
-            'sample_size': sample_size,
-            'reverse_schema': reverse_schema,
-            'reverse_n': reverse_n
-        }
-        
-        # Configure advanced features
-        self.advanced_config = {
-            'autoencoder': autoencoder,
-            'use_emb': use_emb,
-            'use_gae': use_gae
-        }
-        
-        # Store additional parameters
-        self.kwargs = kwargs
-        
-        # Initialize state variables
+        # Training phases
+        self.n_local_epochs = n_local_epochs
+        self.n_epochs = n_epochs
+        self.n_post_local_epochs = n_post_local_epochs
+
+        # Loss weights
+        self.lambda_ot = lambda_ot
+        self.lambda_density = lambda_density if use_density_loss else 0.0
+        self.lambda_energy = lambda_energy
+        self.energy_time_steps = energy_time_steps
+        self.learning_rate = learning_rate
+
+        # Data
+        self.sample_size = sample_size
+
+        # Output
+        self.exp_dir = exp_dir
+        self.n_trajectories = n_trajectories
+        self.n_bins = n_bins
+
+        # Scheduler
+        self.scheduler_kwargs = dict(
+            scheduler_type=scheduler_type,
+            scheduler_step_size=scheduler_step_size,
+            scheduler_gamma=scheduler_gamma,
+            scheduler_t_max=scheduler_t_max,
+            scheduler_min_lr=scheduler_min_lr,
+        )
+
+        # State
         self.is_fitted = False
-        self.model = None
-        self.trajectories = {}
-        self.pseudotime = None
-        self.min_count = None
-        
-        # Set up logging
-        self._setup_logging()
-        
-        # Validate inputs
-        self._validate_inputs()
-        
-        self.logger.info(f"MIOFlow initialized with {self.adata.n_obs} cells and {self.adata.n_vars} genes")
-        self.logger.info(f"Output directory: {self.output_config['exp_dir']}")
-    
-    def _setup_logging(self):
-        """Set up logging based on debug level."""
-        level_map = {
-            'verbose': logging.DEBUG,
-            'info': logging.INFO,
-            'warning': logging.WARNING,
-            'error': logging.ERROR
-        }
-        
+        self.ode_model: Optional[ODEFunc] = None
+        self.trajectories: Optional[np.ndarray] = None
+        self.local_losses = None
+        self.globe_losses = None
+
+        self._setup_logging(debug_level)
+        Path(exp_dir).mkdir(parents=True, exist_ok=True)
+
+        # Encode, normalize, and store as TimeSeriesDataset
+        self.dataset = self._prepare_data(input_df)
+
+        self.logger.info(
+            f"MIOFlow initialised | {adata.n_obs} cells, "
+            f"{adata.n_vars} genes | device={self.device}"
+        )
+
+    # ------------------------------------------------------------------
+    # Setup helpers
+    # ------------------------------------------------------------------
+
+    def _setup_logging(self, debug_level: str):
+        level_map = {'verbose': logging.DEBUG, 'info': logging.INFO,
+                     'warning': logging.WARNING, 'error': logging.ERROR}
         logging.basicConfig(
-            level=level_map.get(self.debug_level, logging.INFO),
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            level=level_map.get(debug_level, logging.INFO),
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         )
         self.logger = logging.getLogger('MIOFlow')
-    
-    def _validate_inputs(self):
-        """Validate input parameters and data."""
-        
-        # Check if obsm_key exists in adata.obsm
-        if self.obsm_key not in self.adata.obsm.keys():
-            raise ValueError(f"Embedding key '{self.obsm_key}' not found in adata.obsm")
-        
-        # Create output directory
-        Path(self.output_config['exp_dir']).mkdir(parents=True, exist_ok=True)
-        
-        self.logger.debug("Input validation completed successfully")
 
-    def _prepare_df(self, input_df):
-        """Normalize the dataframe, save the variables nencessary for decoding"""
-        # Get embedding columns dynamically
-        embed_cols = [col for col in input_df.columns if col.startswith('d') and col[1:].isdigit()] # Retrieve the columns that start with a d
-        embedding = input_df[embed_cols].values
+    def _encode(self, input_df: Optional[pd.DataFrame]) -> Tuple[np.ndarray, np.ndarray]:
+        """Return (embedding, time_labels) as numpy arrays.
 
-        self.mean_vals = np.mean(embedding, axis=0)
+        Priority order:
+        1. *input_df* — used as-is (GAGA encoding skipped).
+        2. ``gaga_model`` — encodes ``adata.obsm[gaga_input_key]`` to latent space.
+        3. Fallback — reads the raw array from ``adata.obsm[gaga_input_key]``.
 
-        std_vals = np.std(embedding, axis=0)
-        self.std_vals = np.where(std_vals == 0, 1, std_vals)  # Prevent division by zero
-        
-        normalized = (embedding - self.mean_vals) / std_vals
-        # We create the dataframe with the normalized data and the samples
-        output_df = pd.DataFrame(normalized, columns=[f'd{i+1}' for i in range(normalized.shape[1])])
-        output_df['samples'] = input_df['samples']
-        return output_df
-
-
-    def _prepare_data(self):
-        """Prepare data in the format expected by training_regimen."""
-        self.logger.debug("Preparing data for training")
-        
-        # Create a numerical bin for each unique value
-        #TODO: change day to be an external variable
-        self.adata.obs['discrete_time'], _ = pd.factorize(self.adata.obs['day'])
-        
-        # Now lets create the data structure that mioflows works on top
-        self.df = pd.DataFrame(
-            self.adata.obsm['X_phate'], 
-            columns=[f'd{i}' for i in range(1, self.adata.obsm['X_phate'].shape[1]+1)]
-        )
-        
-        # Add the time labels to the dataframe as a column called 'samples' (this is expected by MIOFlow)
-        self.df['samples'] = self.adata.obs['discrete_time'].values
-        
-        # Calculate min_count for sample size constraints
-        sample_counts = self.df['samples'].value_counts()
-        self.min_count = int(sample_counts.min())
-        
-        # Update configs with min_count constraints
-        self.data_config['sample_size'] = min(self.min_count, self.data_config['sample_size'])
-        self.output_config['n_points'] = min(self.min_count, self.output_config['n_points'])
-        self.output_config['n_trajectories'] = min(self.min_count, self.output_config['n_trajectories'])
-        
-        self.logger.debug(f"Data prepared: {self.df.shape}, min_count: {self.min_count}")
-
-    def _initialize_model(self):
-        """Initialize the model for training."""
-    
-        
-        self.model = make_model(
-            feature_dims=(len(self.df.columns) - 1),  # Input dimensions (excluding 'samples' column)
-            layers=self.model_config['layers'],
-            activation=self.model_config['activation'],
-            scales=self.model_config['scales'],
-            use_cuda=self.model_config['use_cuda'],
-        )
-    
-    def fit(
-        self,
-        debug_axes: Optional[Any] = None,
-        **fit_kwargs
-    ):
+        Time labels always come from ``adata.obs[obs_time_key]``.
         """
-        Fit the MIOFlow trajectory inference model.
-        
-        Parameters
-        ----------
-        debug_axes : matplotlib.axes.Axes, optional
-            Axes for plotting debug information
-        **fit_kwargs : dict
-            Additional fitting parameters that override initialization settings
-        
-        Returns
-        -------
-        self : MIOFlow
-            Returns self for method chaining
-        """
-        self.logger.info("Starting MIOFlow fitting")
-        
-        # #TODO: Verify this code. Update configs with any fit_kwargs
-        # for config_dict in [self.training_structure, self.output_config, self.model_config, 
-        #                    self.optimization_config, self.data_config, self.advanced_config]:
-        #     for key, value in fit_kwargs.items():
-        #         if key in config_dict:
-        #             config_dict[key] = value
-        
-        # Initialize model
-        self._initialize_model()
-        
-        # Prepare optimizer and criterion
-        optimizer = torch.optim.AdamW(self.model.parameters())
-        criterion = config_criterion(self.optimization_config['criterion_type'])
-        
-        self.logger.info(f"Training with structure: {self.training_structure}")
-        self.logger.info(f"Using CUDA: {self.model_config['use_cuda']}")
+        if input_df is not None:
+            embed_cols = [c for c in input_df.columns if c != 'samples']
+            return input_df[embed_cols].values.astype(np.float64), input_df['samples'].values
 
-        try:
-            # Compute the phate autoencoder
-            print(f"Training PHATE Autoencoder with {self.adata.obsm['X_phate'].shape[0]} cells and {self.adata.obsm['X_phate'].shape[1]} dimensions")
+        if self.gaga_input_key not in self.adata.obsm:
+            raise ValueError(f"Key '{self.gaga_input_key}' not found in adata.obsm")
 
-            self.phate_autoencoder = PhateAutoencoder.train(self.adata.obsm['X_phate'], 
-                                                            self.adata.obsm['X_pca'], 
-                                                            None, 
-                                                            self.adata.uns['pca']['variance_ratio'], 
-                                                            save_dir=self.output_config['exp_dir'],
-                                                            train_reducer=False)
-        except Exception as e:
-            self.logger.error(f"Phate Autoencoder Failed: {str(e)}")
-            raise
+        X_raw = self.adata.obsm[self.gaga_input_key].astype(np.float32)
 
-        try:
-            print(f"Training MIOFlow trajectory inference model")
+        if self.gaga_autoencoder is not None:
+            X_scaled = (self.gaga_input_scaler.transform(X_raw)
+                        if self.gaga_input_scaler is not None else X_raw)
+            self.gaga_autoencoder.eval()
+            with torch.no_grad():
+                embedding = self.gaga_autoencoder.encode(
+                    torch.tensor(X_scaled)
+                ).cpu().numpy().astype(np.float64)
+        else:
+            embedding = X_raw.astype(np.float64)
 
-            # Call the training_regimen function
-            self.local_losses, self.batch_losses, self.globe_losses = training_regimen(
-                # Training structure
-                n_local_epochs=self.training_structure['n_local_epochs'],
-                n_epochs=self.training_structure['n_epochs'],
-                n_post_local_epochs=self.training_structure['n_post_local_epochs'],
-                
-                # Output
-                exp_dir=self.output_config['exp_dir'],
-                
-                # Core training parameters
-                model=self.model,
-                df=self.df,
-                groups=sorted(self.df.samples.unique()),
-                
-                # Optimization
-                optimizer=optimizer,
-                criterion=criterion,
-                use_cuda=self.model_config['use_cuda'],
-                
-                # Data handling
-                hold_one_out=self.data_config['hold_one_out'],
-                sample_size=(self.data_config['sample_size'],),
-                reverse_schema=self.data_config['reverse_schema'],
-                reverse_n=self.data_config['reverse_n'],
-                
-                # Loss configuration
-                use_density_loss=self.optimization_config['use_density_loss'],
-                lambda_density=self.optimization_config['lambda_density'],
-                
-                # Advanced features
-                autoencoder=self.advanced_config['autoencoder'],
-                use_emb=self.advanced_config['use_emb'],
-                use_gae=self.advanced_config['use_gae'],
-                
-                # Visualization and output
-                plot_every=self.output_config['plot_every'],
-                n_points=self.output_config['n_points'],
-                n_trajectories=self.output_config['n_trajectories'],
-                n_bins=self.output_config['n_bins'],
-                
-                # Logger
-                logger=self.logger,
+        time_labels, _ = pd.factorize(self.adata.obs[self.obs_time_key])
+        return embedding, time_labels
+
+    def _normalize(self, embedding: np.ndarray) -> np.ndarray:
+        """Z-normalize embedding, storing mean/std for later denormalization."""
+        self.mean_vals = embedding.mean(axis=0)
+        std = embedding.std(axis=0)
+        self.std_vals = np.where(std == 0, 1.0, std)
+        return (embedding - self.mean_vals) / self.std_vals
+
+    def _prepare_data(self, input_df: Optional[pd.DataFrame] = None) -> 'TimeSeriesDataset':
+        """Encode, normalize, and package data as a TimeSeriesDataset."""
+        embedding, time_labels = self._encode(input_df)
+        normed = self._normalize(embedding)
+        groups = sorted(set(time_labels))
+        time_series_data = [
+            (normed[time_labels == g].astype(np.float32), float(g))
+            for g in groups
+        ]
+        return TimeSeriesDataset(time_series_data)
+
+    # ------------------------------------------------------------------
+    # Training
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _pack_local_losses(h: Dict) -> List[Dict]:
+        return [
+            {'Total': t, 'OT': o, 'Density': d, 'Energy': e}
+            for t, o, d, e in zip(
+                h['total_loss'], h['ot_loss'], h['density_loss'], h['energy_loss']
             )
-            
-            # # After training, extract results
-            self._extract_results()
-            
-            # Mark as fitted
-            self.is_fitted = True
-            
-            self.logger.info("MIOFlow fitting completed successfully")
-            
-        except Exception as e:
-            self.logger.error(f"Training failed: {str(e)}")
-            raise
-        
+        ]
+
+    def _train_phase(self, mode: str, num_epochs: int, dataset: TimeSeriesDataset) -> Dict:
+        return train_mioflow(
+            model=self.ode_model,
+            dataset=dataset,
+            num_epochs=num_epochs,
+            mode=mode,
+            batch_size=self.sample_size,
+            learning_rate=self.learning_rate,
+            device=self.device,
+            lambda_ot=self.lambda_ot,
+            lambda_density=self.lambda_density,
+            lambda_energy=self.lambda_energy,
+            energy_time_steps=self.energy_time_steps,
+            **self.scheduler_kwargs,
+        )
+
+    def fit(self) -> 'MIOFlow':
+        """Train the ODE model and generate trajectories. Returns self."""
+        dataset = self.dataset
+        input_dim = self.dataset.time_series_data[0][0].shape[1]
+
+        self.ode_model = ODEFunc(input_dim=input_dim, hidden_dim=self.hidden_dim)
+        self.logger.info(f"ODEFunc: input_dim={input_dim}, hidden_dim={self.hidden_dim}")
+
+        # Phase 1 – local pre-training
+        if self.n_local_epochs > 0:
+            self.logger.info(f"Local pre-training: {self.n_local_epochs} epochs")
+            self.local_losses = self._pack_local_losses(
+                self._train_phase('local', self.n_local_epochs, dataset)
+            )
+
+        # Phase 2 – global training
+        if self.n_epochs > 0:
+            self.logger.info(f"Global training: {self.n_epochs} epochs")
+            self.globe_losses = self._train_phase('global', self.n_epochs, dataset)['total_loss']
+
+        # Phase 3 – local fine-tuning
+        if self.n_post_local_epochs > 0:
+            self.logger.info(f"Post-local fine-tuning: {self.n_post_local_epochs} epochs")
+            post = self._pack_local_losses(
+                self._train_phase('local', self.n_post_local_epochs, dataset)
+            )
+            self.local_losses = (self.local_losses or []) + post
+
+        # Generate trajectories
+        self._generate_trajectories(dataset)
+
+        self.is_fitted = True
+        self.logger.info("MIOFlow fitting completed.")
         return self
-    
-    def _extract_results(self):
-        """Extract results from the training process."""
-        self.logger.debug("Extracting training results")
-        
-        # TODO: Correct the logger if logger: logger.info(f'Generating points')
-        #TODO: verify the parameters passed to each of this functions
-        self.points = generate_points(self.model, 
-                                      self.df,
-                                      n_points=self.output_config['n_points'],
-                                      use_cuda=self.model_config['use_cuda'],
-                                      sample_with_replacement=False,
-                                      samples_key='samples',
-                                      sample_time=None, 
-                                      autoencoder=None, 
-                                      recon=False
-                                      )
-        
-        # TODO: Correct the logger if logger: logger.info(f'Generating trajectories')
-        self.trajectories = generate_trajectories(self.model, 
-                                                  self.df,
-                                                  n_trajectories=self.output_config['n_trajectories'],
-                                                  n_bins=self.output_config['n_bins'],
-                                                  sample_with_replacement=False,
-                                                  use_cuda=self.model_config['use_cuda'],
-                                                  samples_key='samples',
-                                                  autoencoder=self.advanced_config['autoencoder'],
-                                                  recon=False)
-    
+
+    def _generate_trajectories(self, dataset: TimeSeriesDataset):
+        """Integrate n_trajectories paths over n_bins time steps."""
+        X_0_full = dataset.get_initial_condition()
+        n = min(self.n_trajectories, X_0_full.size(0))
+        idx = torch.randperm(X_0_full.size(0))[:n]
+        X_0_sample = X_0_full[idx].to(self.device)
+
+        times = dataset.times
+        t_bins = torch.linspace(min(times), max(times), self.n_bins, device=self.device)
+
+        self.ode_model.eval()
+        with torch.no_grad():
+            traj = odeint(self.ode_model, X_0_sample, t_bins)  # (n_bins, n_traj, n_dims)
+
+        self.trajectories = traj.cpu().numpy()
+        self.logger.info(f"Trajectories generated: shape={self.trajectories.shape}")
+
+    # ------------------------------------------------------------------
+    # Post-fitting API
+    # ------------------------------------------------------------------
+
     def decode_to_gene_space(self) -> np.ndarray:
         """
-        Decode trajectory points to gene space.
-        
-        Parameters
-        ----------
-        
+        Decode trajectories from GAGA latent space back to gene space.
+
+        Requires:
+        - ``gaga_model`` passed at construction (for latent → PCA decoding)
+        - ``adata.varm['PCs']`` (for PCA → gene space)
+
         Returns
         -------
-        np.ndarray
-            Decoded trajectory points in gene space
+        np.ndarray, shape (n_bins, n_trajectories, n_genes)
         """
         if not self.is_fitted:
-            raise ValueError("Model must be fitted before decoding. Call fit() first.")
+            raise RuntimeError("Call fit() before decode_to_gene_space().")
+        if self.gaga_autoencoder is None:
+            raise RuntimeError(
+                "No GAGA model available. Pass a trained Autoencoder via "
+                "gaga_model= at construction time."
+            )
+        if 'PCs' not in self.adata.varm:
+            raise RuntimeError("adata.varm['PCs'] is required for gene-space decoding.")
 
-        # We need to account for the std and mean in the trajectories.
-        denormalized_trajectories = self.trajectories * self.std_vals + self.mean_vals
+        # Denormalise latent trajectories: (n_bins, n_traj, latent_dim)
+        traj = self.trajectories * self.std_vals + self.mean_vals
+        traj_shape = traj.shape
+        traj_flat = traj.reshape(-1, traj_shape[-1])
 
-        traj_shapes = denormalized_trajectories.shape
-        traj_flat = denormalized_trajectories.reshape(-1, denormalized_trajectories.shape[-1])
+        # GAGA latent → scaled PCA space
+        self.gaga_autoencoder.eval()
+        with torch.no_grad():
+            traj_pca_scaled = self.gaga_autoencoder.decode(
+                torch.tensor(traj_flat, dtype=torch.float32)
+            ).cpu().numpy()
 
-        traj_pca = self.phate_autoencoder.phate2pca(traj_flat)
+        # Inverse-scale back to PCA space (if a scaler was provided)
+        traj_pca = (self.gaga_input_scaler.inverse_transform(traj_pca_scaled)
+                    if self.gaga_input_scaler is not None
+                    else traj_pca_scaled)
 
-        # # Here traj_pca is a 2D array with shape (n_time_points,n_trajectories, n_components)
-        traj_pca = traj_pca.reshape(traj_shapes[0], traj_shapes[1], -1)
-        # Here we compute the decoded trajectories in the original space
-        # traj_pca is a 3D array with shape (n_time_points, n_trajectories, n_components)
-        # We reshape it to have shape (n_time_points * n_trajectories, n_components)
-
-        trajectories_all_points = traj_pca.reshape(-1, traj_pca.shape[-1])
-        X_reconstructed = np.array((trajectories_all_points @ self.adata.varm['PCs'].T) + self.adata.X.mean(axis=0))
-
-        #X_reconstructed have every point in our trajectory back in gene space
-        self.trajectories_gene_space = X_reconstructed.reshape(denormalized_trajectories.shape[0], denormalized_trajectories.shape[1], -1)
-
+        # PCA → gene space
+        X_reconstructed = np.array(
+            traj_pca @ self.adata.varm['PCs'].T + np.array(self.adata.X.mean(axis=0))
+        )
+        self.trajectories_gene_space = X_reconstructed.reshape(
+            traj_shape[0], traj_shape[1], -1
+        )
         return self.trajectories_gene_space
-    
-    def plot_trajectories(self, **plot_kwargs):
-        """
-        Plot the inferred trajectories.
-        
-        Parameters
-        ----------
-        **plot_kwargs : dict
-            Additional plotting parameters
-        """
-        if not self.is_fitted:
-            raise ValueError("Model must be fitted before plotting. Call fit() first.")
-        
-        # TODO: Implement trajectory plotting
-        self.logger.info("Plotting trajectories")
-        
-        pass
-    
-    def get_pseudotime(self) -> np.ndarray:
-        """
-        Get pseudotime values for all cells.
-        
-        Returns
-        -------
-        np.ndarray
-            Pseudotime values
-        """
-        if not self.is_fitted:
-            raise ValueError("Model must be fitted before getting pseudotime. Call fit() first.")
-        
-        return self.pseudotime
-    
-    def get_trajectories(self) -> Dict[str, Any]:
-        """
-        Get fitted trajectory information.
-        
-        Returns
-        -------
-        dict
-            Dictionary containing trajectory information
-        """
-        if not self.is_fitted:
-            raise ValueError("Model must be fitted before getting trajectories. Call fit() first.")
-        
-        return self.trajectories
-    
-    def get_config(self) -> Dict[str, Dict]:
-        """
-        Get all configuration parameters.
-        
-        Returns
-        -------
-        dict
-            Dictionary containing all configuration dictionaries
-        """
-        return {
-            'training_structure': self.training_structure,
-            'output_config': self.output_config,
-            'model_config': self.model_config,
-            'optimization_config': self.optimization_config,
-            'data_config': self.data_config,
-            'advanced_config': self.advanced_config
-        }
-    
-    def update_config(self, config_dict: Dict[str, Any]):
-        """
-        Update configuration parameters.
-        
-        Parameters
-        ----------
-        config_dict : dict
-            Dictionary of configuration updates
-        """
-        for key, value in config_dict.items():
-            if hasattr(self, key):
-                getattr(self, key).update(value)
-            else:
-                self.logger.warning(f"Unknown config key: {key}")
-    
-    def save(self, filepath: str):
-        """
-        Save the fitted MIOFlow model.
-        
-        Parameters
-        ----------
-        filepath : str
-            Path to save the model
-        """
-        if not self.is_fitted:
-            raise ValueError("Model must be fitted before saving.")
-        
-        # TODO: Implement model saving
-        self.logger.info(f"Saving model to {filepath}")
-        pass
-    
-    @classmethod
-    def load(cls, filepath: str):
-        """
-        Load a saved MIOFlow model.
-        
-        Parameters
-        ----------
-        filepath : str
-            Path to the saved model
-        
-        Returns
-        -------
-        MIOFlow
-            Loaded MIOFlow instance
-        """
-        # TODO: Implement model loading
-        pass
-    
-    def __repr__(self):
-        """String representation of MIOFlow object."""
-        fitted_status = "fitted" if self.is_fitted else "not fitted"
-        return (f"MIOFlow(n_obs={self.adata.n_obs}, n_vars={self.adata.n_vars}, "
-                f"obsm_key='{self.obsm_key}', "
-                f"n_epochs={self.training_structure['n_epochs']}, status={fitted_status})")
+
+    def __repr__(self) -> str:
+        status = "fitted" if self.is_fitted else "not fitted"
+        shape = self.trajectories.shape if self.trajectories is not None else None
+        gaga = self.gaga_autoencoder.__class__.__name__ if self.gaga_autoencoder is not None else 'None'
+        return (
+            f"MIOFlow(n_obs={self.adata.n_obs}, gaga={gaga}, "
+            f"n_epochs={self.n_epochs}, trajectories={shape}, status={status})"
+        )
+
+# ---------------------------------------------------------------------------
+# Core building blocks
+# ---------------------------------------------------------------------------
+
+
+
+
+def _make_scheduler(optimizer, scheduler_type, step_size, gamma, t_max, num_epochs, min_lr):
+    if scheduler_type == 'step':
+        return lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
+    if scheduler_type == 'exponential':
+        return lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
+    if scheduler_type == 'cosine':
+        return lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=t_max if t_max is not None else num_epochs, eta_min=min_lr
+        )
+    return None
+
+
+def train_mioflow(
+    model: ODEFunc,
+    dataset: TimeSeriesDataset,
+    num_epochs: int,
+    mode: str = 'local',
+    batch_size: int = None,
+    learning_rate: float = 1e-3,
+    device: str = "cuda" if torch.cuda.is_available() else "cpu",
+    lambda_ot: float = 1.0,
+    lambda_density: float = 0.1,
+    lambda_energy: float = 0.01,
+    energy_time_steps: int = 10,
+    scheduler_type: str = None,
+    scheduler_step_size: int = 30,
+    scheduler_gamma: float = 0.5,
+    scheduler_t_max: int = None,
+    scheduler_min_lr: float = 0.0,
+) -> Dict:
+    """
+    Train an ODEFunc on a TimeSeriesDataset.
+
+    Args:
+        mode: 'local' trains each interval independently;
+              'global' trains the full trajectory end-to-end.
+
+    Returns:
+        History dict with keys: epoch, total_loss, ot_loss, density_loss, energy_loss.
+    """
+    model = model.to(device)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    scheduler = _make_scheduler(
+        optimizer, scheduler_type, scheduler_step_size, scheduler_gamma,
+        scheduler_t_max, num_epochs, scheduler_min_lr,
+    )
+
+    history: Dict[str, list] = {
+        'epoch': [], 'total_loss': [], 'ot_loss': [], 'density_loss': [], 'energy_loss': [],
+    }
+
+    for epoch in tqdm(range(num_epochs), desc=f'Training ({mode})'):
+        epoch_losses = {'total': 0.0, 'ot': 0.0, 'density': 0.0, 'energy': 0.0}
+        num_batches = 0
+
+        if mode == 'local':
+            for interval_idx in range(len(dataset)):
+                batch = dataset[interval_idx]
+                X_start = batch['X_start'].to(device)
+                X_end = batch['X_end'].to(device)
+                t_start, t_end = batch['t_start'], batch['t_end']
+
+                if batch_size is not None:
+                    min_size = min(X_start.size(0), X_end.size(0))
+                    eff = min(batch_size, min_size)
+                    idx = torch.randperm(min_size)[:eff]
+                    X_start, X_end = X_start[idx], X_end[idx]
+
+                t_interval = torch.tensor([t_start, t_end], device=device, dtype=torch.float32)
+                X_pred = odeint(model, X_start, t_interval)[1]
+
+                total_loss = torch.tensor(0.0, device=device)
+                ot_v = torch.tensor(0.0, device=device)
+                den_v = torch.tensor(0.0, device=device)
+                eng_v = torch.tensor(0.0, device=device)
+
+                if lambda_ot > 0:
+                    ot_v = ot_loss(X_pred, X_end)
+                    total_loss = total_loss + lambda_ot * ot_v
+                if lambda_density > 0:
+                    den_v = density_loss(X_pred, X_end)
+                    total_loss = total_loss + lambda_density * den_v
+                if lambda_energy > 0:
+                    e_t = torch.linspace(t_start, t_end, energy_time_steps, device=device, dtype=torch.float32)
+                    eng_v = energy_loss(model, X_start, e_t)
+                    total_loss = total_loss + lambda_energy * eng_v
+
+                optimizer.zero_grad()
+                total_loss.backward()
+                optimizer.step()
+
+                epoch_losses['total'] += total_loss.item()
+                epoch_losses['ot'] += ot_v.item()
+                epoch_losses['density'] += den_v.item()
+                epoch_losses['energy'] += eng_v.item()
+                num_batches += 1
+
+        elif mode == 'global':
+            X_0 = dataset.get_initial_condition().to(device)
+            full_t_seq = dataset.get_time_sequence().to(device)
+            trajectory = odeint(model, X_0, full_t_seq)
+
+            total_loss = torch.tensor(0.0, device=device)
+            ot_total, den_total = 0.0, 0.0
+
+            for i in range(1, len(full_t_seq)):
+                X_pred = trajectory[i]
+                X_true, _ = dataset.time_series_data[i]
+                X_true = torch.tensor(X_true, device=device, dtype=torch.float32)
+
+                if batch_size is not None and X_pred.size(0) > batch_size:
+                    idx = torch.randperm(X_pred.size(0))[:batch_size]
+                    X_pred = X_pred[idx]
+                    X_true = X_true[idx]
+
+                if lambda_ot > 0:
+                    v = ot_loss(X_pred, X_true)
+                    total_loss = total_loss + lambda_ot * v
+                    ot_total += v.item()
+                if lambda_density > 0:
+                    v = density_loss(X_pred, X_true)
+                    total_loss = total_loss + lambda_density * v
+                    den_total += v.item()
+
+            eng_v = 0.0
+            if lambda_energy > 0:
+                e_t = torch.linspace(full_t_seq[0], full_t_seq[-1], energy_time_steps, device=device)
+                eng_v = energy_loss(model, X_0, e_t)
+                total_loss = total_loss + lambda_energy * eng_v
+
+            optimizer.zero_grad()
+            total_loss.backward()
+            optimizer.step()
+
+            epoch_losses['total'] = total_loss.item()
+            epoch_losses['ot'] = ot_total
+            epoch_losses['density'] = den_total
+            epoch_losses['energy'] = eng_v.item() if hasattr(eng_v, 'item') else eng_v
+            num_batches = 1
+
+        else:
+            raise ValueError(f"Unknown mode: {mode!r}. Choose 'local' or 'global'.")
+
+        for k in epoch_losses:
+            epoch_losses[k] /= num_batches
+
+        if scheduler is not None:
+            scheduler.step()
+
+        history['epoch'].append(epoch + 1)
+        history['total_loss'].append(epoch_losses['total'])
+        history['ot_loss'].append(epoch_losses['ot'])
+        history['density_loss'].append(epoch_losses['density'])
+        history['energy_loss'].append(epoch_losses['energy'])
+
+    return history
+
