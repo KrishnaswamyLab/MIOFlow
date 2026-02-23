@@ -15,13 +15,13 @@
 
 
 
-**MIOFlow** is a Python package for modeling and analyzing single-cell RNA-seq data using **optimal flows**. It leverages **neural ordinary differential equations (neural ODEs)** and **optimal transport** to reconstruct trajectories, compare cell populations, and study dynamic biological processes.
+**MIOFlow** is a Python package for modeling and analyzing single-cell RNA-seq data using **optimal flows**. It leverages **neural ordinary differential equations (neural ODEs)** and **optimal transport** to reconstruct cell developmental trajectories from time-series scRNA-seq data.
 
 ## Features
 
 - **Trajectory inference** using optimal transport and neural ODEs
-- **Comparison across conditions** (e.g., control vs. perturbation)  
-- **Visualization utilities** for single-cell dynamics
+- **GAGA embedding** — geometric autoencoder that preserves PHATE distances in latent space
+- **Gene-space decoding** — map trajectories back to full gene expression via PCA inverse projection
 - **Flexible I/O** for AnnData and standard scRNA-seq formats
 
 ## Installation
@@ -42,9 +42,31 @@ pip install git+https://github.com/yourusername/MIOFlow.git
 
 ### Basic Workflow
 
-A basic workflow can be found on the tutorials. There is a Google Colab option as well.
+```python
+from MIOFlow.gaga import Autoencoder, train_gaga_two_phase, train_valid_loader_from_pc
+from MIOFlow.mioflow import MIOFlow
 
-tutorials/1_MIOFlow_Example.ipynb or tutorials/2_Colab_Training_MIOFlow
+# 1. Train a GAGA autoencoder on PCA coordinates + PHATE distances
+gaga_model = Autoencoder(input_dim=50, latent_dim=10)
+train_loader, val_loader = train_valid_loader_from_pc(X_pca, D_phate, batch_size=64)
+train_gaga_two_phase(gaga_model, train_loader, encoder_epochs=50, decoder_epochs=50)
+
+# 2. Fit MIOFlow
+mf = MIOFlow(
+    adata,
+    gaga_model=gaga_model,
+    gaga_input_scaler=scaler,   # StandardScaler fitted on X_pca
+    obs_time_key='day',
+    n_epochs=200,
+)
+mf.fit()
+
+# 3. Inspect results
+print(mf.trajectories.shape)          # (n_bins, n_trajectories, latent_dim)
+gene_traj = mf.decode_to_gene_space() # (n_bins, n_trajectories, n_genes)
+```
+
+Full worked examples are in the [tutorials/](tutorials/) directory.
 
 
 ## Citation
@@ -75,6 +97,7 @@ MIOFlow is distributed under the terms of the Yale License.
 
 ## Acknowledgments
 
-- Built with PyTorch for neural ODE implementations
-- Integrates with scanpy ecosystem for single-cell analysis
-- Optimal transport implementations based on POT library
+- Built with PyTorch and [torchdiffeq](https://github.com/rtqichen/torchdiffeq) for neural ODE integration
+- Integrates with the scanpy / AnnData ecosystem for single-cell analysis
+- Optimal transport via the [POT](https://pythonot.github.io/) library
+- Geometric embedding via [PHATE](https://github.com/KrishnaswamyLab/PHATE)

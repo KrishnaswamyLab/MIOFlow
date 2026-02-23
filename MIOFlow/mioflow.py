@@ -148,10 +148,10 @@ class MIOFlow:
         debug_level: str = 'info',
         hidden_dim: float = 64,
         use_cuda: bool = True,
-        # Training phases
-        n_local_epochs: int = 0,
+        #Model config
+        momentum_beta = 0.0,
+        # Training
         n_epochs: int = 100,
-        n_post_local_epochs: int = 0,
         # Loss
         lambda_ot: float = 1.0,
         use_density_loss: bool = False,
@@ -180,12 +180,11 @@ class MIOFlow:
 
         # Model config
         self.hidden_dim = hidden_dim
+        self.momentum_beta = momentum_beta
         self.device = 'cuda' if (use_cuda and torch.cuda.is_available()) else 'cpu'
 
-        # Training phases
-        self.n_local_epochs = n_local_epochs
+        # Training
         self.n_epochs = n_epochs
-        self.n_post_local_epochs = n_post_local_epochs
 
         # Loss weights
         self.lambda_ot = lambda_ot
@@ -215,8 +214,7 @@ class MIOFlow:
         self.is_fitted = False
         self.ode_model: Optional[ODEFunc] = None
         self.trajectories: Optional[np.ndarray] = None
-        self.local_losses = None
-        self.globe_losses = None
+        self.losses = None
 
         self._setup_logging(debug_level)
         Path(exp_dir).mkdir(parents=True, exist_ok=True)
@@ -293,25 +291,19 @@ class MIOFlow:
         ]
         return TimeSeriesDataset(time_series_data)
 
-    # ------------------------------------------------------------------
-    # Training
-    # ------------------------------------------------------------------
+    def fit(self) -> 'MIOFlow':
+        """Train the ODE model and generate trajectories. Returns self."""
+        dataset = self.dataset
+        input_dim = self.dataset.time_series_data[0][0].shape[1]
 
-    @staticmethod
-    def _pack_local_losses(h: Dict) -> List[Dict]:
-        return [
-            {'Total': t, 'OT': o, 'Density': d, 'Energy': e}
-            for t, o, d, e in zip(
-                h['total_loss'], h['ot_loss'], h['density_loss'], h['energy_loss']
-            )
-        ]
+        self.ode_model = ODEFunc(input_dim=input_dim, hidden_dim=self.hidden_dim,momentum_beta=self.momentum_beta)
+        self.logger.info(f"ODEFunc: input_dim={input_dim}, hidden_dim={self.hidden_dim}")
 
-    def _train_phase(self, mode: str, num_epochs: int, dataset: TimeSeriesDataset) -> Dict:
-        return train_mioflow(
+        self.logger.info(f"Global training: {self.n_epochs} epochs")
+        history = train_mioflow(
             model=self.ode_model,
             dataset=dataset,
-            num_epochs=num_epochs,
-            mode=mode,
+            num_epochs=self.n_epochs,
             batch_size=self.sample_size,
             learning_rate=self.learning_rate,
             device=self.device,
@@ -321,36 +313,8 @@ class MIOFlow:
             energy_time_steps=self.energy_time_steps,
             **self.scheduler_kwargs,
         )
+        self.losses = history
 
-    def fit(self) -> 'MIOFlow':
-        """Train the ODE model and generate trajectories. Returns self."""
-        dataset = self.dataset
-        input_dim = self.dataset.time_series_data[0][0].shape[1]
-
-        self.ode_model = ODEFunc(input_dim=input_dim, hidden_dim=self.hidden_dim)
-        self.logger.info(f"ODEFunc: input_dim={input_dim}, hidden_dim={self.hidden_dim}")
-
-        # Phase 1 – local pre-training
-        if self.n_local_epochs > 0:
-            self.logger.info(f"Local pre-training: {self.n_local_epochs} epochs")
-            self.local_losses = self._pack_local_losses(
-                self._train_phase('local', self.n_local_epochs, dataset)
-            )
-
-        # Phase 2 – global training
-        if self.n_epochs > 0:
-            self.logger.info(f"Global training: {self.n_epochs} epochs")
-            self.globe_losses = self._train_phase('global', self.n_epochs, dataset)['total_loss']
-
-        # Phase 3 – local fine-tuning
-        if self.n_post_local_epochs > 0:
-            self.logger.info(f"Post-local fine-tuning: {self.n_post_local_epochs} epochs")
-            post = self._pack_local_losses(
-                self._train_phase('local', self.n_post_local_epochs, dataset)
-            )
-            self.local_losses = (self.local_losses or []) + post
-
-        # Generate trajectories
         self._generate_trajectories(dataset)
 
         self.is_fitted = True
@@ -439,9 +403,6 @@ class MIOFlow:
 # Core building blocks
 # ---------------------------------------------------------------------------
 
-
-
-
 def _make_scheduler(optimizer, scheduler_type, step_size, gamma, t_max, num_epochs, min_lr):
     if scheduler_type == 'step':
         return lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
@@ -458,7 +419,6 @@ def train_mioflow(
     model: ODEFunc,
     dataset: TimeSeriesDataset,
     num_epochs: int,
-    mode: str = 'local',
     batch_size: int = None,
     learning_rate: float = 1e-3,
     device: str = "cuda" if torch.cuda.is_available() else "cpu",
@@ -473,11 +433,7 @@ def train_mioflow(
     scheduler_min_lr: float = 0.0,
 ) -> Dict:
     """
-    Train an ODEFunc on a TimeSeriesDataset.
-
-    Args:
-        mode: 'local' trains each interval independently;
-              'global' trains the full trajectory end-to-end.
+    Train an ODEFunc on a TimeSeriesDataset using global (full-trajectory) training.
 
     Returns:
         History dict with keys: epoch, total_loss, ot_loss, density_loss, energy_loss.
@@ -493,100 +449,64 @@ def train_mioflow(
         'epoch': [], 'total_loss': [], 'ot_loss': [], 'density_loss': [], 'energy_loss': [],
     }
 
-    for epoch in tqdm(range(num_epochs), desc=f'Training ({mode})'):
+    for epoch in tqdm(range(num_epochs), desc='Training (global)'):
         epoch_losses = {'total': 0.0, 'ot': 0.0, 'density': 0.0, 'energy': 0.0}
-        num_batches = 0
 
-        if mode == 'local':
-            for interval_idx in range(len(dataset)):
-                batch = dataset[interval_idx]
-                X_start = batch['X_start'].to(device)
-                X_end = batch['X_end'].to(device)
-                t_start, t_end = batch['t_start'], batch['t_end']
+        num_intervals = 0
+        # Train each time interval separately
+        for interval_idx in range(len(dataset)):
+            batch = dataset[interval_idx]
+            X_start = batch['X_start'].to(device)
+            X_end = batch['X_end'].to(device)
+            t_start = batch['t_start']
+            t_end = batch['t_end']
 
-                if batch_size is not None:
-                    min_size = min(X_start.size(0), X_end.size(0))
-                    eff = min(batch_size, min_size)
-                    idx = torch.randperm(min_size)[:eff]
-                    X_start, X_end = X_start[idx], X_end[idx]
+            # Sample points if batch_size specified
+            if batch_size is not None:
+                min_size = min(X_start.size(0), X_end.size(0))
+                effective_batch_size = min(batch_size, min_size)
+                indices = torch.randperm(min_size)[:effective_batch_size]
+                X_start = X_start[indices]
+                X_end = X_end[indices]
 
-                t_interval = torch.tensor([t_start, t_end], device=device, dtype=torch.float32)
-                X_pred = odeint(model, X_start, t_interval)[1]
+            # Integrate from X_start to predict X_end
+            model.reset_momentum()
+            t_interval = torch.tensor([t_start, t_end], device=device, dtype=torch.float32)
+            X_pred = odeint(model, X_start, t_interval)[1]
 
-                total_loss = torch.tensor(0.0, device=device)
-                ot_v = torch.tensor(0.0, device=device)
-                den_v = torch.tensor(0.0, device=device)
-                eng_v = torch.tensor(0.0, device=device)
-
-                if lambda_ot > 0:
-                    ot_v = ot_loss(X_pred, X_end)
-                    total_loss = total_loss + lambda_ot * ot_v
-                if lambda_density > 0:
-                    den_v = density_loss(X_pred, X_end)
-                    total_loss = total_loss + lambda_density * den_v
-                if lambda_energy > 0:
-                    e_t = torch.linspace(t_start, t_end, energy_time_steps, device=device, dtype=torch.float32)
-                    eng_v = energy_loss(model, X_start, e_t)
-                    total_loss = total_loss + lambda_energy * eng_v
-
-                optimizer.zero_grad()
-                total_loss.backward()
-                optimizer.step()
-
-                epoch_losses['total'] += total_loss.item()
-                epoch_losses['ot'] += ot_v.item()
-                epoch_losses['density'] += den_v.item()
-                epoch_losses['energy'] += eng_v.item()
-                num_batches += 1
-
-        elif mode == 'global':
-            X_0 = dataset.get_initial_condition().to(device)
-            full_t_seq = dataset.get_time_sequence().to(device)
-            trajectory = odeint(model, X_0, full_t_seq)
-
+            # Compute losses
             total_loss = torch.tensor(0.0, device=device)
-            ot_total, den_total = 0.0, 0.0
+            ot_loss_val = torch.tensor(0.0, device=device)
+            density_loss_val = torch.tensor(0.0, device=device)
+            energy_loss_val = torch.tensor(0.0, device=device)
 
-            for i in range(1, len(full_t_seq)):
-                X_pred = trajectory[i]
-                X_true, _ = dataset.time_series_data[i]
-                X_true = torch.tensor(X_true, device=device, dtype=torch.float32)
+            if lambda_ot > 0:
+                ot_loss_val = ot_loss(X_pred, X_end)
+                total_loss = total_loss + lambda_ot * ot_loss_val
 
-                if batch_size is not None and X_pred.size(0) > batch_size:
-                    idx = torch.randperm(X_pred.size(0))[:batch_size]
-                    X_pred = X_pred[idx]
-                    X_true = X_true[idx]
+            if lambda_density > 0:
+                density_loss_val = density_loss(X_pred, X_end)
+                total_loss = total_loss + lambda_density * density_loss_val
 
-                if lambda_ot > 0:
-                    v = ot_loss(X_pred, X_true)
-                    total_loss = total_loss + lambda_ot * v
-                    ot_total += v.item()
-                if lambda_density > 0:
-                    v = density_loss(X_pred, X_true)
-                    total_loss = total_loss + lambda_density * v
-                    den_total += v.item()
-
-            eng_v = 0.0
             if lambda_energy > 0:
-                e_t = torch.linspace(full_t_seq[0], full_t_seq[-1], energy_time_steps, device=device)
-                eng_v = energy_loss(model, X_0, e_t)
-                total_loss = total_loss + lambda_energy * eng_v
+                energy_t_seq = torch.linspace(t_start, t_end, energy_time_steps, device=device, dtype=torch.float32)
+                energy_loss_val = energy_loss(model, X_start, energy_t_seq)
+                total_loss = total_loss + lambda_energy * energy_loss_val
+
 
             optimizer.zero_grad()
             total_loss.backward()
             optimizer.step()
 
-            epoch_losses['total'] = total_loss.item()
-            epoch_losses['ot'] = ot_total
-            epoch_losses['density'] = den_total
-            epoch_losses['energy'] = eng_v.item() if hasattr(eng_v, 'item') else eng_v
-            num_batches = 1
+            epoch_losses['total'] += total_loss.item()
+            epoch_losses['ot'] += ot_loss_val.item()
+            epoch_losses['density'] += density_loss_val.item()
+            epoch_losses['energy'] += energy_loss_val.item()
+            num_intervals += 1
 
-        else:
-            raise ValueError(f"Unknown mode: {mode!r}. Choose 'local' or 'global'.")
-
-        for k in epoch_losses:
-            epoch_losses[k] /= num_batches
+        # Average losses across intervals
+        for key in epoch_losses:
+            epoch_losses[key] /= num_intervals
 
         if scheduler is not None:
             scheduler.step()
