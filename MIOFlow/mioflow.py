@@ -89,9 +89,6 @@ class MIOFlow:
     adata : AnnData
         Annotated data. Must contain ``obsm['X_pca']`` and ``varm['PCs']``
         for gene-space decoding.
-    input_df : pd.DataFrame, optional
-        Pre-built DataFrame with columns ``d1, d2, ..., samples`` (embedding
-        already in latent space). When provided, GAGA encoding is skipped.
     gaga_model : Autoencoder, optional
         A trained GAGA ``Autoencoder`` from ``gaga.py``. Its encoder is used
         to embed ``adata.obsm[gaga_input_key]`` into the latent space for ODE
@@ -139,7 +136,6 @@ class MIOFlow:
     def __init__(
         self,
         adata,
-        input_df: Optional[pd.DataFrame] = None,
         # GAGA autoencoder (trained externally)
         gaga_model=None,
         gaga_input_key: str = 'X_pca',
@@ -220,7 +216,7 @@ class MIOFlow:
         Path(exp_dir).mkdir(parents=True, exist_ok=True)
 
         # Encode, normalize, and store as TimeSeriesDataset
-        self.dataset = self._prepare_data(input_df)
+        self.dataset = self._prepare_data()
 
         self.logger.info(
             f"MIOFlow initialised | {adata.n_obs} cells, "
@@ -240,25 +236,22 @@ class MIOFlow:
         )
         self.logger = logging.getLogger('MIOFlow')
 
-    def _encode(self, input_df: Optional[pd.DataFrame]) -> Tuple[np.ndarray, np.ndarray]:
+    def _encode(self) -> Tuple[np.ndarray, np.ndarray]:
         """Return (embedding, time_labels) as numpy arrays.
 
         Priority order:
-        1. *input_df* — used as-is (GAGA encoding skipped).
-        2. ``gaga_model`` — encodes ``adata.obsm[gaga_input_key]`` to latent space.
-        3. Fallback — reads the raw array from ``adata.obsm[gaga_input_key]``.
+        1. ``gaga_model`` — encodes ``adata.obsm[gaga_input_key]`` to latent space.
+        2. Fallback — reads the raw array from ``adata.obsm[gaga_input_key]``.
 
         Time labels always come from ``adata.obs[obs_time_key]``.
         """
-        if input_df is not None:
-            embed_cols = [c for c in input_df.columns if c != 'samples']
-            return input_df[embed_cols].values.astype(np.float64), input_df['samples'].values
 
         if self.gaga_input_key not in self.adata.obsm:
             raise ValueError(f"Key '{self.gaga_input_key}' not found in adata.obsm")
 
         X_raw = self.adata.obsm[self.gaga_input_key].astype(np.float32)
 
+        # If no autoencoder was used reads adata.obsm[gaga_input_key]: 
         if self.gaga_autoencoder is not None:
             X_scaled = (self.gaga_input_scaler.transform(X_raw)
                         if self.gaga_input_scaler is not None else X_raw)
@@ -270,7 +263,7 @@ class MIOFlow:
         else:
             embedding = X_raw.astype(np.float64)
 
-        time_labels, _ = pd.factorize(self.adata.obs[self.obs_time_key])
+        time_labels, _ = pd.factorize(self.adata.obs[self.obs_time_key],sort=True)
         return embedding, time_labels
 
     def _normalize(self, embedding: np.ndarray) -> np.ndarray:
@@ -280,9 +273,11 @@ class MIOFlow:
         self.std_vals = np.where(std == 0, 1.0, std)
         return (embedding - self.mean_vals) / self.std_vals
 
-    def _prepare_data(self, input_df: Optional[pd.DataFrame] = None) -> 'TimeSeriesDataset':
+    def _prepare_data(self) -> 'TimeSeriesDataset':
         """Encode, normalize, and package data as a TimeSeriesDataset."""
-        embedding, time_labels = self._encode(input_df)
+        embedding, time_labels = self._encode()
+        self.embedding = embedding # saving the latent space where we ran our model
+        self._time_labels = time_labels  # saving the time_labels
         normed = self._normalize(embedding)
         groups = sorted(set(time_labels))
         time_series_data = [
@@ -320,7 +315,7 @@ class MIOFlow:
         self.is_fitted = True
         self.logger.info("MIOFlow fitting completed.")
         return self
-
+        
     def _generate_trajectories(self, dataset: TimeSeriesDataset):
         """Integrate n_trajectories paths over n_bins time steps."""
         X_0_full = dataset.get_initial_condition()
@@ -335,7 +330,7 @@ class MIOFlow:
         with torch.no_grad():
             traj = odeint(self.ode_model, X_0_sample, t_bins)  # (n_bins, n_traj, n_dims)
 
-        self.trajectories = traj.cpu().numpy()
+        self.trajectories = traj.cpu().numpy() * self.std_vals + self.mean_vals
         self.logger.info(f"Trajectories generated: shape={self.trajectories.shape}")
 
     # ------------------------------------------------------------------
@@ -364,22 +359,21 @@ class MIOFlow:
         if 'PCs' not in self.adata.varm:
             raise RuntimeError("adata.varm['PCs'] is required for gene-space decoding.")
 
-        # Denormalise latent trajectories: (n_bins, n_traj, latent_dim)
-        traj = self.trajectories * self.std_vals + self.mean_vals
-        traj_shape = traj.shape
-        traj_flat = traj.reshape(-1, traj_shape[-1])
+        # Flatten (n_bins, n_traj, latent_dim) → (n_bins * n_traj, latent_dim) for batch decoding
+        traj_shape = self.trajectories.shape
+        traj_flat = self.trajectories.reshape(-1, traj_shape[-1])
 
         # GAGA latent → scaled PCA space
         self.gaga_autoencoder.eval()
         with torch.no_grad():
-            traj_pca_scaled = self.gaga_autoencoder.decode(
+            traj_pca_gaga = self.gaga_autoencoder.decode(
                 torch.tensor(traj_flat, dtype=torch.float32)
             ).cpu().numpy()
 
         # Inverse-scale back to PCA space (if a scaler was provided)
-        traj_pca = (self.gaga_input_scaler.inverse_transform(traj_pca_scaled)
+        traj_pca = (self.gaga_input_scaler.inverse_transform(traj_pca_gaga)
                     if self.gaga_input_scaler is not None
-                    else traj_pca_scaled)
+                    else traj_pca_gaga)
 
         # PCA → gene space
         X_reconstructed = np.array(
@@ -420,11 +414,11 @@ def train_mioflow(
     dataset: TimeSeriesDataset,
     num_epochs: int,
     batch_size: int = None,
-    learning_rate: float = 1e-3,
     device: str = "cuda" if torch.cuda.is_available() else "cpu",
-    lambda_ot: float = 1.0,
+    lambda_ot = None,
     lambda_density: float = 0.1,
     lambda_energy: float = 0.01,
+    learning_rate: float = 1e-3,
     energy_time_steps: int = 10,
     scheduler_type: str = None,
     scheduler_step_size: int = 30,
@@ -480,9 +474,9 @@ def train_mioflow(
             density_loss_val = torch.tensor(0.0, device=device)
             energy_loss_val = torch.tensor(0.0, device=device)
 
-            if lambda_ot > 0:
+            if lambda_ot[interval_idx] > 0:
                 ot_loss_val = ot_loss(X_pred, X_end)
-                total_loss = total_loss + lambda_ot * ot_loss_val
+                total_loss = total_loss + lambda_ot[interval_idx] * ot_loss_val
 
             if lambda_density > 0:
                 density_loss_val = density_loss(X_pred, X_end)
