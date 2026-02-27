@@ -19,13 +19,14 @@ import torch.optim as optim
 from torch.optim import lr_scheduler
 from torch.utils.data import Dataset
 from torchdiffeq import odeint
+import torchsde
 from tqdm import tqdm
 
 try:
-    from MIOFlow.core.models import ODEFunc
+    from MIOFlow.core.models import ODEFunc, SDEFunc
     from MIOFlow.core.losses import ot_loss, density_loss, energy_loss
 except ImportError:
-    from core.models import ODEFunc
+    from core.models import ODEFunc, SDEFunc
     from core.losses import ot_loss, density_loss, energy_loss
 
 class TimeSeriesDataset(Dataset):
@@ -146,6 +147,14 @@ class MIOFlow:
         use_cuda: bool = True,
         #Model config
         momentum_beta = 0.0,
+        #SDE config
+        use_sde: bool = False,
+        diffusion_scale: float = 0.1,
+        diffusion_init_scale: float = 0.1,
+        sde_dt: float = 0.1,
+        lambda_energy_f: float = 1.0,
+        lambda_energy_g: float = 0.0,
+        grad_clip: float = 1.0,
         # Training
         n_epochs: int = 100,
         # Loss
@@ -179,6 +188,14 @@ class MIOFlow:
         self.momentum_beta = momentum_beta
         self.device = 'cuda' if (use_cuda and torch.cuda.is_available()) else 'cpu'
 
+        #SDE config
+        self.use_sde = use_sde
+        self.diffusion_scale = diffusion_scale
+        self.diffusion_init_scale = diffusion_init_scale
+        self.sde_dt = sde_dt
+        self.lambda_energy_f = lambda_energy_f
+        self.lambda_energy_g = lambda_energy_g
+        self.grad_clip = grad_clip
         # Training
         self.n_epochs = n_epochs
 
@@ -208,7 +225,7 @@ class MIOFlow:
 
         # State
         self.is_fitted = False
-        self.ode_model: Optional[ODEFunc] = None
+        self.ode_model = None
         self.trajectories: Optional[np.ndarray] = None
         self.losses = None
 
@@ -291,8 +308,19 @@ class MIOFlow:
         dataset = self.dataset
         input_dim = self.dataset.time_series_data[0][0].shape[1]
 
-        self.ode_model = ODEFunc(input_dim=input_dim, hidden_dim=self.hidden_dim,momentum_beta=self.momentum_beta)
-        self.logger.info(f"ODEFunc: input_dim={input_dim}, hidden_dim={self.hidden_dim}")
+        if self.use_sde:
+            self.ode_model = SDEFunc(
+                input_dim=input_dim,
+                hidden_dim=self.hidden_dim,
+                diffusion_scale=self.diffusion_scale,
+                diffusion_init_scale=self.diffusion_init_scale,
+                momentum_beta=self.momentum_beta,
+            )
+            self.logger.info(f"SDEFunc: input_dim={input_dim}, hidden_dim={self.hidden_dim}")
+        
+        else:
+            self.ode_model = ODEFunc(input_dim=input_dim, hidden_dim=self.hidden_dim,momentum_beta=self.momentum_beta)
+            self.logger.info(f"ODEFunc: input_dim={input_dim}, hidden_dim={self.hidden_dim}")
 
         self.logger.info(f"Global training: {self.n_epochs} epochs")
         history = train_mioflow(
@@ -306,6 +334,11 @@ class MIOFlow:
             lambda_density=self.lambda_density,
             lambda_energy=self.lambda_energy,
             energy_time_steps=self.energy_time_steps,
+            #SDE
+            sde_dt=self.sde_dt,
+            lambda_energy_f=self.lambda_energy_f,
+            lambda_energy_g=self.lambda_energy_g,
+            grad_clip=self.grad_clip,
             **self.scheduler_kwargs,
         )
         self.losses = history
@@ -328,7 +361,11 @@ class MIOFlow:
 
         self.ode_model.eval()
         with torch.no_grad():
-            traj = odeint(self.ode_model, X_0_sample, t_bins)  # (n_bins, n_traj, n_dims)
+            if isinstance(self.ode_model, SDEFunc):
+                traj = torchsde.sdeint(self.ode_model, X_0_sample, t_bins.cpu(), dt=self.sde_dt)
+                traj = traj.to(self.device)
+            else: #ODE
+                traj = odeint(self.ode_model, X_0_sample, t_bins)  # (n_bins, n_traj, n_dims)
 
         self.trajectories = traj.cpu().numpy() * self.std_vals + self.mean_vals
         self.logger.info(f"Trajectories generated: shape={self.trajectories.shape}")
@@ -410,21 +447,27 @@ def _make_scheduler(optimizer, scheduler_type, step_size, gamma, t_max, num_epoc
 
 
 def train_mioflow(
-    model: ODEFunc,
+    model,
     dataset: TimeSeriesDataset,
     num_epochs: int,
-    batch_size: int = None,
+    batch_size: int = None,  # Number of points to sample per time step (None = use all)
+    learning_rate: float = 1e-3,
     device: str = "cuda" if torch.cuda.is_available() else "cpu",
-    lambda_ot = None,
+    lambda_ot: float = 1.0,
     lambda_density: float = 0.1,
     lambda_energy: float = 0.01,
-    learning_rate: float = 1e-3,
+    lambda_energy_f: float = 1.0,  # Weight for drift energy (SDE only)
+    lambda_energy_g: float = 0.0,  # Weight for diffusion energy (SDE only)
     energy_time_steps: int = 10,
-    scheduler_type: str = None,
-    scheduler_step_size: int = 30,
-    scheduler_gamma: float = 0.5,
-    scheduler_t_max: int = None,
-    scheduler_min_lr: float = 0.0,
+    sde_dt: float = 0.1,  # Time step for SDE integration
+    grad_clip: float = 1.0,  # Gradient clipping for SDE (None = no clipping)
+    scheduler_type: str = None,  # 'step', 'exponential', 'cosine', or None
+    scheduler_step_size: int = 30,  # For StepLR
+    scheduler_gamma: float = 0.5,  # Decay factor for schedulers
+    scheduler_t_max: int = None,  # For CosineAnnealingLR, defaults to num_epochs
+    scheduler_min_lr: float = 0.0,  # Minimum learning rate for cosine scheduler
+    growth_rate_model = None,  # Growth rate model
+    growth_rate_lr: float = 1e-4  # Learning rate for growth rate model
 ) -> Dict:
     """
     Train an ODEFunc on a TimeSeriesDataset using global (full-trajectory) training.
@@ -433,7 +476,19 @@ def train_mioflow(
         History dict with keys: epoch, total_loss, ot_loss, density_loss, energy_loss.
     """
     model = model.to(device)
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+
+    if growth_rate_model is not None:
+        growth_rate_model = growth_rate_model.to(device)
+        optimizer = optim.Adam([
+            {'params': model.parameters(), 'lr': learning_rate},
+            {'params': growth_rate_model.parameters(), 'lr': growth_rate_lr}
+        ])
+    else:
+        optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+
+    # Detect if model is SDE
+    is_sde = hasattr(model, 'f') and hasattr(model, 'g')
+
     scheduler = _make_scheduler(
         optimizer, scheduler_type, scheduler_step_size, scheduler_gamma,
         scheduler_t_max, num_epochs, scheduler_min_lr,
@@ -466,30 +521,49 @@ def train_mioflow(
             # Integrate from X_start to predict X_end
             model.reset_momentum()
             t_interval = torch.tensor([t_start, t_end], device=device, dtype=torch.float32)
-            X_pred = odeint(model, X_start, t_interval)[1]
 
-            # Compute losses
-            total_loss = torch.tensor(0.0, device=device)
+            if is_sde:
+                X_pred = torchsde.sdeint_adjoint(model, X_start, t_interval, dt=sde_dt, method='euler')[1]
+            else:
+                X_pred = odeint(model, X_start, t_interval)[1]
+                
+            # Compute losses (only when weights are non-zero)
+            total_loss = 0.0
             ot_loss_val = torch.tensor(0.0, device=device)
             density_loss_val = torch.tensor(0.0, device=device)
             energy_loss_val = torch.tensor(0.0, device=device)
 
-            if lambda_ot[interval_idx] > 0:
-                ot_loss_val = ot_loss(X_pred, X_end)
-                total_loss = total_loss + lambda_ot[interval_idx] * ot_loss_val
+            source_mass = None
+            if growth_rate_model is not None:
+                if getattr(growth_rate_model, 'use_time', False):
+                    t_tensor = torch.tensor([t_start], device=device, dtype=torch.float32)
+                    source_mass = growth_rate_model(X_start, t_tensor)
+                else:
+                    source_mass = growth_rate_model(X_start)
 
+            if lambda_ot > 0:
+                ot_loss_val = ot_loss(X_pred, X_end, source_mass=source_mass)
+                total_loss += lambda_ot * ot_loss_val
+                    
             if lambda_density > 0:
-                density_loss_val = density_loss(X_pred, X_end)
-                total_loss = total_loss + lambda_density * density_loss_val
+                density_loss_val = density_loss(X_pred, X_end, source_mass=source_mass)
+                total_loss += lambda_density * density_loss_val
 
             if lambda_energy > 0:
+                # Create denser time grid for energy loss
                 energy_t_seq = torch.linspace(t_start, t_end, energy_time_steps, device=device, dtype=torch.float32)
-                energy_loss_val = energy_loss(model, X_start, energy_t_seq)
-                total_loss = total_loss + lambda_energy * energy_loss_val
+                energy_loss_val = energy_loss(model, X_start, energy_t_seq, is_sde=is_sde, dt=sde_dt, 
+                                             lambda_f=lambda_energy_f, lambda_g=lambda_energy_g)
+                total_loss += lambda_energy * energy_loss_val
+
 
 
             optimizer.zero_grad()
             total_loss.backward()
+
+            if grad_clip is not None:
+                nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
+
             optimizer.step()
 
             epoch_losses['total'] += total_loss.item()
