@@ -1,12 +1,3 @@
-"""
-TODO:
-1. per-time-point loss weights
-2. deprecate local training
-3. add weight initialization
-4. test on gpu
-5. test different activation functions
-"""
-
 import logging
 from pathlib import Path
 from typing import List, Dict, Tuple, Optional
@@ -17,50 +8,19 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
-from torch.utils.data import Dataset
 from torchdiffeq import odeint
 import torchsde
 from tqdm import tqdm
 
 try:
-    from MIOFlow.core.models import ODEFunc, SDEFunc
+    from MIOFlow.core.models.ode_model import ODEFunc
+    from MIOFlow.core.models.sde_model import SDEFunc
     from MIOFlow.core.losses import ot_loss, density_loss, energy_loss
+    from MIOFlow.core.datasets import TimeSeriesDataset
 except ImportError:
-    from core.models import ODEFunc, SDEFunc
+    from core.models.ode_model import ODEFunc
+    from core.models.sde_model import SDEFunc
     from core.losses import ot_loss, density_loss, energy_loss
-
-class TimeSeriesDataset(Dataset):
-    """
-    Time series data with variable numbers of points per time step.
-    Stores a list of (X_t, t) tuples where X_t is [n_points, dim].
-    """
-
-    def __init__(self, time_series_data: List[Tuple[np.ndarray, float]]):
-        self.time_series_data = time_series_data
-        self.times = [t for _, t in time_series_data]
-
-    def __len__(self):
-        return len(self.time_series_data) - 1
-
-    def __getitem__(self, idx):
-        X_t, t_start = self.time_series_data[idx]
-        X_t1, t_end = self.time_series_data[idx + 1]
-        return {
-            'X_start': torch.tensor(X_t, dtype=torch.float32),
-            'X_end': torch.tensor(X_t1, dtype=torch.float32),
-            't_start': t_start,
-            't_end': t_end,
-            'interval_idx': idx,
-        }
-
-    def get_time_sequence(self, start_idx=0, end_idx=None):
-        if end_idx is None:
-            end_idx = len(self.times)
-        return torch.tensor(self.times[start_idx:end_idx], dtype=torch.float32)
-
-    def get_initial_condition(self, start_idx=0):
-        X_0, _ = self.time_series_data[start_idx]
-        return torch.tensor(X_0, dtype=torch.float32)
 
 
 class MIOFlow:
@@ -176,6 +136,9 @@ class MIOFlow:
         scheduler_gamma: float = 0.5,
         scheduler_t_max: Optional[int] = None,
         scheduler_min_lr: float = 0.0,
+        # Growth rate
+        growth_rate_model=None,
+        growth_rate_lr: float = 1e-4,
     ):
         self.adata = adata
         self.gaga_autoencoder = gaga_model
@@ -222,6 +185,10 @@ class MIOFlow:
             scheduler_t_max=scheduler_t_max,
             scheduler_min_lr=scheduler_min_lr,
         )
+
+        # Growth rate
+        self.growth_rate_model = growth_rate_model
+        self.growth_rate_lr = growth_rate_lr
 
         # State
         self.is_fitted = False
@@ -339,6 +306,9 @@ class MIOFlow:
             lambda_energy_f=self.lambda_energy_f,
             lambda_energy_g=self.lambda_energy_g,
             grad_clip=self.grad_clip,
+            # Growth rate
+            growth_rate_model=self.growth_rate_model,
+            growth_rate_lr=self.growth_rate_lr,
             **self.scheduler_kwargs,
         )
         self.losses = history
@@ -555,8 +525,6 @@ def train_mioflow(
                 energy_loss_val = energy_loss(model, X_start, energy_t_seq, is_sde=is_sde, dt=sde_dt, 
                                              lambda_f=lambda_energy_f, lambda_g=lambda_energy_g)
                 total_loss += lambda_energy * energy_loss_val
-
-
 
             optimizer.zero_grad()
             total_loss.backward()
