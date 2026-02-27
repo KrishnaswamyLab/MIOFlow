@@ -38,41 +38,32 @@ There are no automated tests beyond CI installation checks (`pip install -e .`).
 The package follows a layered architecture:
 
 ```
-User API (mioflow.py: MIOFlow class)
-  ├── Embedding: phate_autoencoder.py + phate_decoder.py
-  ├── Training: train.py (train, train_ae, training_regimen)
-  ├── Models: models.py (ToyODE, Autoencoder, GrowthRateModel, ConditionalODE)
-  ├── Losses: losses.py (MMD_loss, OT_loss, Density_loss)
-  ├── Evaluation: eval.py (generate_points, generate_trajectories)
-  └── Visualization: plots.py
+User API (mioflow.py: MIOFlow class, TimeSeriesDataset, train_mioflow)
+  ├── Embedding: gaga.py (Autoencoder, train_gaga_two_phase, PointCloudDataset, RowStochasticDataset)
+  └── Core: core/
+        ├── models.py (ODEFunc)
+        └── losses.py (ot_loss, density_loss, energy_loss)
 ```
-
-**Supporting modules:**
-- `ode.py` — Neural ODE wrappers around `torchdiffeq`
-- `geo.py` — Geometric/distance computations for the manifold
-- `utils.py` — Sampling, torch↔numpy conversion, group extraction
-- `datasets.py` — Synthetic data generators + real scRNA-seq loaders (worm, EB, DynGen)
-- `exp.py` — Experiment configuration via Hydra/OmegaConf
-- `constants.py` — Dataset file paths
-- `preprocessing.py` — Preprocessing utilities (early stage)
 
 ### Training Pipeline
 
-MIOFlow trains in two phases within `training_regimen()`:
-1. **Local phase** — predicts t+1 from t (short-range temporal consistency)
-2. **Global phase** — full trajectory optimization
+MIOFlow training is a single global phase managed by `train_mioflow()` in `mioflow.py`. The `MIOFlow` class orchestrates the full workflow:
 
-The `MIOFlow` class in [MIOFlow/mioflow.py](MIOFlow/mioflow.py) is the primary user-facing API and orchestrates the full workflow: dimensionality reduction via PHATE autoencoder → ODE training → trajectory generation.
+1. **Encoding** — optionally encodes `adata.obsm[gaga_input_key]` into a latent space using a pre-trained GAGA `Autoencoder` (from `gaga.py`). If no GAGA model is supplied, raw PCA coordinates are used directly.
+2. **Normalisation** — Z-normalises the embedding per-dimension (mean/std stored for inversion).
+3. **ODE training** — trains `ODEFunc` interval-by-interval using OT loss, optional density loss, and optional energy regularisation.
+4. **Trajectory generation** — integrates sampled initial conditions across all time bins with `torchdiffeq.odeint`.
+5. **Gene-space decoding** — `decode_to_gene_space()` inverts the GAGA decoder and the PCA projection to recover gene expression.
 
 ### Key Neural Components
 
-- **ToyODE** (`models.py`) — Core derivative network with optional augmentation, momentum, and noise scales
-- **PhateAutoencoder** (`phate_autoencoder.py`) — PHATE-based encoder for non-linear dimensionality reduction
-- **Loss functions** (`losses.py`) — MMD (Maximum Mean Discrepancy), OT (Optimal Transport via EMD/Sinkhorn using `pot`), and Density losses
+- **ODEFunc** (`core/models.py`) — Time-conditioned derivative network (Linear → SiLU stack) with optional momentum smoothing. Kaiming initialisation.
+- **Autoencoder / GAGA** (`gaga.py`) — Geometric autoencoder trained in two phases: (1) encoder trained for PHATE-distance preservation, (2) decoder trained for reconstruction. Helper classes `PointCloudDataset` and `RowStochasticDataset` are provided for data preparation.
+- **Loss functions** (`core/losses.py`) — OT loss (Earth Mover's Distance via `pot`), density loss (kNN hinge), and energy loss (vector-field magnitude regularisation).
 
 ### Dependencies
 
-Core: `torch`, `torchdiffeq`, `torchsde`, `pytorch-lightning`, `scanpy`, `phate`, `graphtools`, `pot` (Python Optimal Transport), `hydra-core`
+Core: `torch`, `torchdiffeq`, `scanpy`, `phate`, `pot` (Python Optimal Transport)
 
 ## Version Note
 
