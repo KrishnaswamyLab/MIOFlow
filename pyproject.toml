@@ -1,6 +1,6 @@
 [project]
 name = "mioflow"
-version = "0.1.10"
+version = "0.1.11"
 description = "MIOFlow is a Python package for modeling and analyzing single-cell RNA-seq data using optimal flows."
 readme = "README.md"
 requires-python = ">=3.8"
