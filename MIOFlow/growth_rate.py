@@ -26,7 +26,6 @@ class GrowthRateModel(nn.Module):
         # Data encoding — same interface as MIOFlow
         gaga_model=None,
         gaga_input_key: str = 'X_pca',
-        gaga_input_scaler=None,
         obs_time_key: str = 'time_bin',
         use_cuda: bool = True,
     ):
@@ -34,7 +33,6 @@ class GrowthRateModel(nn.Module):
         self.use_time = use_time
         self.gaga_autoencoder = gaga_model
         self.gaga_input_key = gaga_input_key
-        self.gaga_input_scaler = gaga_input_scaler
         self.obs_time_key = obs_time_key
         self.device = 'cuda' if (use_cuda and torch.cuda.is_available()) else 'cpu'
 
@@ -56,8 +54,8 @@ class GrowthRateModel(nn.Module):
         X_raw = adata.obsm[self.gaga_input_key].astype(np.float32)
 
         if self.gaga_autoencoder is not None:
-            X_scaled = (self.gaga_input_scaler.transform(X_raw)
-                        if self.gaga_input_scaler is not None else X_raw)
+            X_scaled = (self.gaga_autoencoder.input_scaler.transform(X_raw)
+                        if self.gaga_autoencoder.input_scaler is not None else X_raw)
             self.gaga_autoencoder.eval()
             with torch.no_grad():
                 embedding = self.gaga_autoencoder.encode(

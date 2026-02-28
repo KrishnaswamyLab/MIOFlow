@@ -34,11 +34,10 @@ class MIOFlow:
         gaga_model = Autoencoder(input_dim, latent_dim)
         train_gaga_two_phase(gaga_model, dataloader, ...)
 
-        # 2. Pass the trained model + its input scaler to MIOFlow
+        # 2. Pass the trained model to MIOFlow (scaler read from gaga_model.input_scaler)
         mf = MIOFlow(
             adata,
             gaga_model=gaga_model,
-            gaga_input_scaler=scaler,   # StandardScaler fitted on X_pca
             obs_time_key='time_bin',
             n_epochs=100,
         )
@@ -57,10 +56,6 @@ class MIOFlow:
         training; its decoder is used in ``decode_to_gene_space()``.
     gaga_input_key : str
         Key in ``adata.obsm`` fed to the GAGA encoder (default: ``'X_pca'``).
-    gaga_input_scaler : sklearn-compatible scaler, optional
-        Scaler (e.g. ``StandardScaler``) already fitted on the data in
-        ``adata.obsm[gaga_input_key]``. Used to normalise inputs before
-        encoding and to inverse-transform decoder outputs.
     obs_time_key : str
         Column in ``adata.obs`` holding the time/group label
         (default: ``'day'``).
@@ -101,7 +96,6 @@ class MIOFlow:
         # GAGA autoencoder (trained externally)
         gaga_model=None,
         gaga_input_key: str = 'X_pca',
-        gaga_input_scaler=None,
         obs_time_key: str = "time_bin",
         debug_level: str = 'info',
         hidden_dim: float = 64,
@@ -144,7 +138,6 @@ class MIOFlow:
         self.adata = adata
         self.gaga_autoencoder = gaga_model
         self.gaga_input_key = gaga_input_key
-        self.gaga_input_scaler = gaga_input_scaler
         self.obs_time_key = obs_time_key
 
         # Model config
@@ -238,8 +231,8 @@ class MIOFlow:
 
         # If no autoencoder was used reads adata.obsm[gaga_input_key]: 
         if self.gaga_autoencoder is not None:
-            X_scaled = (self.gaga_input_scaler.transform(X_raw)
-                        if self.gaga_input_scaler is not None else X_raw)
+            scaler = getattr(self.gaga_autoencoder, 'input_scaler', None)
+            X_scaled = scaler.transform(X_raw) if scaler is not None else X_raw
             self.gaga_autoencoder.eval()
             with torch.no_grad():
                 embedding = self.gaga_autoencoder.encode(
@@ -378,10 +371,9 @@ class MIOFlow:
                 torch.tensor(traj_flat, dtype=torch.float32)
             ).cpu().numpy()
 
-        # Inverse-scale back to PCA space (if a scaler was provided)
-        traj_pca = (self.gaga_input_scaler.inverse_transform(traj_pca_gaga)
-                    if self.gaga_input_scaler is not None
-                    else traj_pca_gaga)
+        # Inverse-scale back to PCA space
+        scaler = getattr(self.gaga_autoencoder, 'input_scaler', None)
+        traj_pca = scaler.inverse_transform(traj_pca_gaga) if scaler is not None else traj_pca_gaga
 
         # PCA → gene space
         X_reconstructed = np.array(
