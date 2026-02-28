@@ -9,7 +9,8 @@ import torch.optim as optim
 import numpy as np
 from tqdm import tqdm
 import phate
-import scipy
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics.pairwise import pairwise_distances
 from typing import List, Union, Optional, Tuple
 
 
@@ -329,6 +330,87 @@ def dataloader_from_pc(pointcloud, distances, batch_size=64, shuffle=True):
                                batch_size=batch_size, shuffle=shuffle)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=None, shuffle=shuffle)
     return dataloader
+
+
+def fit_gaga(
+    X_pca: np.ndarray,
+    X_phate: np.ndarray,
+    latent_dim: int = 2,
+    hidden_dims: List[int] = [128, 64],
+    batch_size: int = 1024,
+    encoder_epochs: int = 300,
+    decoder_epochs: int = 300,
+    learning_rate: float = 1e-3,
+    dist_weight_phase1: float = 1.0,
+    recon_weight_phase2: float = 1.0,
+    device: str = "cuda" if torch.cuda.is_available() else "cpu",
+) -> 'Autoencoder':
+    """
+    Convenience wrapper: scale inputs, build Autoencoder, run two-phase GAGA training.
+
+    Handles all preprocessing internally so the caller only needs to supply raw
+    ``adata.obsm`` arrays.  The fitted PCA scaler is stored on the returned model
+    as ``model.input_scaler`` so that ``MIOFlow`` can pick it up automatically.
+
+    Parameters
+    ----------
+    X_pca : np.ndarray, shape (n_cells, n_pcs)
+        Raw PCA coordinates (e.g. ``adata.obsm['X_pca']``).
+    X_phate : np.ndarray, shape (n_cells, n_phate_dims)
+        Raw PHATE coordinates (e.g. ``adata.obsm['X_phate']``).
+    latent_dim : int
+        Dimensionality of the GAGA latent space (should match PHATE dims).
+    hidden_dims : list of int
+        Hidden layer sizes for encoder and decoder.
+    batch_size : int
+        Batch size for the DataLoader.
+    encoder_epochs : int
+        Phase 1 epochs (distance preservation, decoder frozen).
+    decoder_epochs : int
+        Phase 2 epochs (reconstruction, encoder frozen).
+    learning_rate : float
+        Adam learning rate.
+    dist_weight_phase1 : float
+        Weight for distance loss in phase 1.
+    recon_weight_phase2 : float
+        Weight for reconstruction loss in phase 2.
+    device : str
+        Torch device string.
+
+    Returns
+    -------
+    Autoencoder
+        Trained model with ``model.input_scaler`` (StandardScaler fitted on X_pca).
+    """
+    X_pca = X_pca.astype(np.float32)
+    X_phate = X_phate.astype(np.float32)
+
+    # Scale PCA inputs — scaler stored on the model for downstream use
+    scaler_pca = StandardScaler().fit(X_pca)
+    X_pca_scaled = scaler_pca.transform(X_pca)
+
+    # Scale PHATE and compute pairwise distances for geometric regularisation
+    X_phate_scaled = StandardScaler().fit_transform(X_phate)
+    phate_dist = pairwise_distances(X_phate_scaled, metric='euclidean').astype(np.float32)
+
+    input_dim = X_pca_scaled.shape[1]
+    model = Autoencoder(input_dim, latent_dim, hidden_dims=hidden_dims)
+    loader = dataloader_from_pc(X_pca_scaled, phate_dist, batch_size=batch_size)
+    print(f'GAGA architecture: {input_dim} → {latent_dim}')
+
+    train_gaga_two_phase(
+        model,
+        loader,
+        encoder_epochs=encoder_epochs,
+        decoder_epochs=decoder_epochs,
+        learning_rate=learning_rate,
+        device=device,
+        dist_weight_phase1=dist_weight_phase1,
+        recon_weight_phase2=recon_weight_phase2,
+    )
+
+    model.input_scaler = scaler_pca
+    return model
 
 
 def train_valid_loader_from_pc(pointcloud, distances, batch_size=64,
