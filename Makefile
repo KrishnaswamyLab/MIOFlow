@@ -6,7 +6,7 @@ pypi: dist
 	twine upload --repository pypi dist/*
 
 dist: clean
-	python setup.py sdist bdist_wheel
+	python -m build
 
 clean:
 	rm -rf dist
