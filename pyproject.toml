@@ -1,6 +1,6 @@
 [project]
-name = "MIOFlow"
-version = "0.1.9"
+name = "mioflow"
+version = "0.1.10"
 description = "MIOFlow is a Python package for modeling and analyzing single-cell RNA-seq data using optimal flows."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -44,7 +44,7 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["MIOFlow"]
+packages = ["mioflow"]
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
@@ -61,5 +61,5 @@ dev = [
 
 # [tool.uv.workspace]
 # members = [
-#     "MIOFlow",
+#     "mioflow",
 # ]

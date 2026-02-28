@@ -13,14 +13,15 @@ import torchsde
 from tqdm import tqdm
 
 try:
-    from MIOFlow.core.models.ode_model import ODEFunc
-    from MIOFlow.core.models.sde_model import SDEFunc
-    from MIOFlow.core.losses import ot_loss, density_loss, energy_loss
-    from MIOFlow.core.datasets import TimeSeriesDataset
+    from mioflow.core.models.ode_model import ODEFunc
+    from mioflow.core.models.sde_model import SDEFunc
+    from mioflow.core.losses import ot_loss, density_loss, energy_loss
+    from mioflow.core.datasets import TimeSeriesDataset
 except ImportError:
     from core.models.ode_model import ODEFunc
     from core.models.sde_model import SDEFunc
     from core.losses import ot_loss, density_loss, energy_loss
+    from core.datasets import TimeSeriesDataset
 
 
 class MIOFlow:
