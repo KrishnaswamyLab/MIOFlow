@@ -41,6 +41,7 @@ dependencies = [
     "ipykernel>=6.29.5",
     "notebook>=7.3.3",
     "torch-geometric>=2.6.1",
+    "harmonypy>=0.0.10",
 ]
 
 [tool.setuptools.packages.find]
