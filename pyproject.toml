@@ -4,43 +4,30 @@ version = "0.1.13"
 description = "MIOFlow is a Python package for modeling and analyzing single-cell RNA-seq data using optimal flows."
 readme = "README.md"
 requires-python = ">=3.8"
-# license = "LicenseRef-Yale-License"
-license-files =["LICENSE.md"]
+license-files = ["LICENSE.md"]
 keywords = ["neural ode", "trajectory", "emd", "Optimal Transport", "single cell RNA", "mioflow"]
 authors = [
   {name = "xingzhis", email = "xingzhi.sun@yale.edu"},
   {name = "bjoaofelipe", email = "joaofelipe.rocha@yale.edu"}
 ]
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
-    "Intended Audience :: Developers",
-    # "License :: Yale License",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
 ]
 dependencies = [
-    "numpy<=1.26.4",
     "pandas",
+    "numpy>=1.24.4",
     "torch>=1.11.0",
-    "pytorch-lightning",
-    "hydra-core",
-    "omegaconf",
-    "torchsde",
     "torchdiffeq",
+    "torchsde",
     "scikit-learn",
-    "scipy",
     "matplotlib",
-    "seaborn",
     "phate",
-    "graphtools",
-    "pot", # Python Optimal Transport
+    "pot",
     "tqdm",
-    "pyyaml",
     "scanpy>=1.9.8",
-    "ipywidgets>=8.1.7",
-    "ipykernel>=6.29.5",
-    "notebook>=7.3.3",
-    "torch-geometric>=2.6.1",
 ]
 
 [tool.setuptools.packages.find]
@@ -54,13 +41,7 @@ build-backend = "setuptools.build_meta"
 [dependency-groups]
 dev = [
     "ipykernel>=6.29.5",
+    "ipywidgets>=8.1.7",
+    "notebook>=7.3.3",
+    "seaborn",
 ]
-
-
-# [tool.uv]
-# package = true
-
-# [tool.uv.workspace]
-# members = [
-#     "mioflow",
-# ]
