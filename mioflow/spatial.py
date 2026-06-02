@@ -11,7 +11,7 @@ from sklearn.preprocessing import StandardScaler
 from scipy.sparse.linalg import matrix_power as sparse_matpow
 
 # TO DO: add spatial features
-# robustness for 3D data
+# robustness for 3D data, key mismatches, edge cases
 # add batch correction for multi-sample datasets?
 
 def compute_spatial_features(
@@ -73,9 +73,6 @@ def compute_spatial_features(
     np.ndarray of shape (n_cells, n_spatial_pca), also stored in ``adata.obsm[store_key]``.
     """
 
-    if coords_key not in adata.obsm:
-        raise ValueError(f"coords_key='{coords_key}' not found in adata.obsm")
-
     n_cells = adata.n_obs
     coords = np.array(adata.obsm[coords_key])
     edge_index = _build_graph(coords, k, n_hops, d_max)
@@ -93,6 +90,17 @@ def compute_spatial_features(
     niche_feats = _mean_aggregate(X_pca_niche, edge_index)
 
     feature_blocks.append(niche_feats)
+
+    # FEATURE 2: neighbourhood cell-type composition
+    if celltype_key is not None:
+        cell_types, type_idx = np.unique(adata.obs[celltype_key], return_inverse=True)
+        n_types = len(cell_types)
+
+        one_hot = np.zeros((n_cells, n_types))
+        one_hot[np.arange(n_cells), type_idx] = 1
+
+        type_feats = _sum_aggregate(one_hot, edge_index)
+        feature_blocks.append(type_feats)
 
     # Concatenate and normalise features
     S_raw = np.concatenate(feature_blocks, axis=1) 
@@ -146,11 +154,13 @@ def _mean_aggregate(X: np.ndarray, edge_index: np.ndarray) -> np.ndarray:
 
     n = X.shape[0]
 
+    # edge_index is (n_edges, 2) with rows [source, target]
     src, dst = edge_index[:, 0], edge_index[:, 1]
 
     out = np.zeros_like(X)
     counts = np.zeros(n)
 
+    # for each edge, add the source node's features to the target node's output and increment the count for the target node
     np.add.at(out, src, X[dst])
     np.add.at(counts, src, 1)
 
@@ -163,6 +173,7 @@ def _sum_aggregate(X: np.ndarray, edge_index: np.ndarray) -> np.ndarray:
 
     src, dst = edge_index[:, 0], edge_index[:, 1]
 
+    # for each edge, add the source node's features to the target node's output
     out = np.zeros_like(X)
     np.add.at(out, src, X[dst])
 
