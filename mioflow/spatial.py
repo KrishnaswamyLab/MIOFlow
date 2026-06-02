@@ -80,6 +80,32 @@ def compute_spatial_features(
     coords = np.array(adata.obsm[coords_key])
     edge_index = _build_graph(coords, k, n_hops, d_max)
 
+    feature_blocks = []
+
+    # FEATURE 1: local expression niche (mean PCA embedding of neighbours)
+    X_raw = adata.X
+    if sp.issparse(X_raw):
+        X_raw = X_raw.toarray()
+
+    # determines max possible PCA components
+    n_pca_actual = min(n_pca_niche, X_raw.shape[1], X_raw.shape[0] - 1)
+    X_pca_niche = PCA(n_components=n_pca_actual).fit_transform(X_raw)
+    niche_feats = _mean_aggregate(X_pca_niche, edge_index)
+
+    feature_blocks.append(niche_feats)
+
+    # Concatenate and normalise features
+    S_raw = np.concatenate(feature_blocks, axis=1) 
+    S_raw = StandardScaler().fit_transform(S_raw)
+
+    # determines max possible PCA components based on data dimensions
+    n_out = min(n_spatial_pca, S_raw.shape[1], S_raw.shape[0] - 1) 
+    S = PCA(n_components=n_out).fit_transform(S_raw)
+
+    adata.obsm[store_key] = S
+    return S
+
+
 # HELPERS
 
 # builds a symmetric kNN graph, returns edge_index of shape (n_edges, 2)
@@ -139,5 +165,5 @@ def _sum_aggregate(X: np.ndarray, edge_index: np.ndarray) -> np.ndarray:
 
     out = np.zeros_like(X)
     np.add.at(out, src, X[dst])
-    
+
     return out
