@@ -5,6 +5,7 @@
 /data/raw/*
 
 *.h5ad
+*.csv
 # Results
 /results/*
 

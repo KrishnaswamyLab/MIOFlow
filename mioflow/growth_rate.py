@@ -12,7 +12,7 @@ import ot
 import os
 
 try:
-    from MIOFlow.core.datasets import TimeSeriesDataset
+    from mioflow.core.datasets import TimeSeriesDataset
 except ImportError:
     from core.datasets import TimeSeriesDataset
 
