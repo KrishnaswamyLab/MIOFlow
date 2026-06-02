@@ -4,6 +4,7 @@ from typing import Optional, List
 import numpy as np
 import pandas as pd
 import phate
+import scipy.sparse as sp
 from sklearn.decomposition import PCA
 from sklearn.neighbors import kneighbors_graph as knn
 from sklearn.preprocessing import StandardScaler
@@ -112,3 +113,21 @@ def _build_graph(
     # returns edge_index of shape (n_edges, 2)
     rows, cols = G.nonzero()
     return np.stack([rows, cols], axis=1)
+
+# mean-aggregate X over neighbours defined by edge_index
+# could add more robust checks
+def _mean_aggregate(X: np.ndarray, edge_index: np.ndarray) -> np.ndarray:
+
+    n = X.shape[0]
+
+    src, dst = edge_index[:, 0], edge_index[:, 1]
+
+    out = np.zeros_like(X)
+    counts = np.zeros(n)
+
+    np.add.at(out, src, X[dst])
+    np.add.at(counts, src, 1)
+
+    counts = np.maximum(counts, 1)  # prevent division by zero
+
+    return out / counts[:, None] # think this works? should be broadcasting counts for each feature dimension
