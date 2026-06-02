@@ -131,3 +131,13 @@ def _mean_aggregate(X: np.ndarray, edge_index: np.ndarray) -> np.ndarray:
     counts = np.maximum(counts, 1)  # prevent division by zero
 
     return out / counts[:, None] # think this works? should be broadcasting counts for each feature dimension
+
+# sum-aggregate X over neighbours defined by edge_index
+def _sum_aggregate(X: np.ndarray, edge_index: np.ndarray) -> np.ndarray:
+
+    src, dst = edge_index[:, 0], edge_index[:, 1]
+
+    out = np.zeros_like(X)
+    np.add.at(out, src, X[dst])
+    
+    return out
