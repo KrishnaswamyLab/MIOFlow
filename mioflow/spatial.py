@@ -9,6 +9,7 @@ from sklearn.decomposition import PCA
 from sklearn.neighbors import kneighbors_graph as knn
 from sklearn.preprocessing import StandardScaler
 from scipy.sparse.linalg import matrix_power as sparse_matpow
+import torch
 
 # TO DO: add spatial features
 # robustness for 3D data, key mismatches, edge cases
@@ -102,6 +103,8 @@ def compute_spatial_features(
         type_feats = _sum_aggregate(one_hot, edge_index)
         feature_blocks.append(type_feats)
 
+    # TO ADD: feature 3 (ligand-receptor signalling)
+
     # Concatenate and normalise features
     S_raw = np.concatenate(feature_blocks, axis=1) 
     S_raw = StandardScaler().fit_transform(S_raw)
@@ -112,6 +115,50 @@ def compute_spatial_features(
 
     adata.obsm[store_key] = S
     return S
+
+# TO DO: adjust default hyperparameters (chosen somewhat arbitrarily)
+def fit_spatial_gaga(
+    adata,
+    spatial_key: str = 'X_spatial',
+    latent_dim: int = 2,
+    hidden_dims: List[int] = [64, 32],
+    batch_size: int = 512,
+    encoder_epochs: int = 100,
+    decoder_epochs: int = 100,
+    learning_rate: float = 1e-3,
+    device: str = 'cuda' if torch.cuda.is_available() else 'cpu',
+):
+    """
+    Train a PHATE-regularised GAGA autoencoder on spatial features.
+
+    Mirrors ``fit_gaga()`` from ``gaga.py`` but operates on the spatial
+    feature matrix produced by ``compute_spatial_features()``.
+
+    Parameters
+    ----------
+    adata : AnnData
+        Must have ``adata.obsm[spatial_key]``.
+    spatial_key : str
+        Key in ``adata.obsm`` holding the spatial feature matrix.
+    latent_dim : int
+        GAGA latent space dimensionality.
+    hidden_dims : list of int, optional
+        Hidden layer sizes.
+    batch_size : int
+        Number of cells per training batch.
+    encoder_epochs : int
+        Phase 1 epochs (distance preservation).
+    decoder_epochs : int
+        Phase 2 epochs (reconstruction).
+    learning_rate : float
+        Adam learning rate.
+    device : str
+        Torch device string.
+
+    Returns
+    -------
+    Autoencoder with ``model.input_scaler``.
+    """
 
 
 # HELPERS
