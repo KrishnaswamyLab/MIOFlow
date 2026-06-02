@@ -160,6 +160,26 @@ def fit_spatial_gaga(
     Autoencoder with ``model.input_scaler``.
     """
 
+    if spatial_key not in adata.obsm:
+        raise ValueError(f"'{spatial_key}' not found in adata.obsm. Run compute_spatial_features().")
+
+    X_spatial = np.array(adata.obsm[spatial_key])
+
+    print("Computing PHATE on spatial features...")
+    phate_op = phate.PHATE(n_components=latent_dim, verbose=True)
+    X_phate = phate_op.fit_transform(X_spatial)
+
+    return fit_gaga(
+        X_pca=X_spatial,
+        X_phate=X_phate,
+        latent_dim=latent_dim,
+        hidden_dims=hidden_dims,
+        batch_size=batch_size,
+        encoder_epochs=encoder_epochs,
+        decoder_epochs=decoder_epochs,
+        learning_rate=learning_rate,
+        device=device,
+    )
 
 # HELPERS
 
