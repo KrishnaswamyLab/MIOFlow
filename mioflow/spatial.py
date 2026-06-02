@@ -1,6 +1,7 @@
 # Spatial feature extraction for MIOFlow 2.0
 
 from typing import Optional, List
+import torch
 import numpy as np
 import pandas as pd
 import phate
@@ -9,7 +10,7 @@ from sklearn.decomposition import PCA
 from sklearn.neighbors import kneighbors_graph as knn
 from sklearn.preprocessing import StandardScaler
 from scipy.sparse.linalg import matrix_power as sparse_matpow
-import torch
+from mioflow.gaga import fit_gaga
 
 # TO DO: add spatial features
 # robustness for 3D data, key mismatches, edge cases
