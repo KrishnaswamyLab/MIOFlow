@@ -13,7 +13,7 @@ from scipy.sparse.linalg import matrix_power as sparse_matpow
 from mioflow.gaga import fit_gaga
 
 # TO DO: add spatial features
-# robustness for 3D data, key mismatches, edge cases
+# robustness for 3D data, key mismatches, edge cases (and add typecasting)
 # add batch correction for multi-sample datasets?
 
 def compute_spatial_features(

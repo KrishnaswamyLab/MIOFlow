@@ -128,6 +128,10 @@ class MIOFlow:
         # Growth rate
         growth_rate_model=None,
         growth_rate_lr: float = 1e-4,
+        # Spatial GAGA
+        spatial_gaga_model=None,
+        spatial_key: str = 'X_spatial',
+        spatial_scale: float = 0.2,
     ):
         self.adata = adata
         self.gaga_autoencoder = gaga_model
@@ -177,6 +181,11 @@ class MIOFlow:
         # Growth rate
         self.growth_rate_model = growth_rate_model
         self.growth_rate_lr = growth_rate_lr
+
+        # Spatial GAGA
+        self.spatial_gaga_model = spatial_gaga_model
+        self.spatial_key = spatial_key
+        self.spatial_scale = spatial_scale
 
         # State
         self.is_fitted = False
