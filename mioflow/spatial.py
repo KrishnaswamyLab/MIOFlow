@@ -21,11 +21,12 @@ def compute_spatial_features(
     coords_key: str = 'spatial',
     k: int = 5,
     n_hops: int = 3,
-    d_max: Optional[float] = None, # 500?
+    d_max: Optional[float] = None,
     lr_pairs: Optional[str] = None,
     lr_expr_key: Optional[str] = None,
     celltype_key: Optional[str] = None,
-    n_pca_niche: int = 50, # consider tuning these
+    batch_key: Optional[str] = None,
+    n_pca_niche: int = 50,
     n_spatial_pca: int = 100,
     store_key: str = 'X_spatial',
 ) -> np.ndarray:
@@ -77,7 +78,19 @@ def compute_spatial_features(
 
     n_cells = adata.n_obs
     coords = np.array(adata.obsm[coords_key])
-    edge_index = _build_graph(coords, k, n_hops, d_max)
+
+    # CHECK THIS
+    if batch_key is not None:
+        edge_parts = []
+
+        for batch in np.unique(adata.obs[batch_key]):
+            batch_mask = np.where(adata.obs[batch_key] == batch)[0]
+            local_edges = _build_graph(coords[batch_mask], k, n_hops, d_max)
+            edge_parts.append(batch_mask[local_edges])  # remap to global indices
+        edge_index = np.concatenate(edge_parts, axis=0)
+        
+    else:
+        edge_index = _build_graph(coords, k, n_hops, d_max)
 
     feature_blocks = []
 
@@ -184,6 +197,7 @@ def fit_spatial_gaga(
 
 # HELPERS
 
+# FIX THIS
 # builds a symmetric kNN graph, returns edge_index of shape (n_edges, 2)
 # could be more robust (more bounds checking ie min(k, n-1), n<=1)
 def _build_graph(
