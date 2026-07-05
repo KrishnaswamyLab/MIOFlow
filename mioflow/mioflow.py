@@ -230,7 +230,7 @@ class MIOFlow:
             self.gaga_autoencoder.eval()
             with torch.no_grad():
                 embedding = self.gaga_autoencoder.encode(
-                    torch.tensor(X_scaled)
+                    torch.tensor(X_scaled, device=self.device)
                 ).cpu().numpy().astype(np.float64)
         else:
             embedding = X_raw.astype(np.float64)
@@ -362,7 +362,7 @@ class MIOFlow:
         self.gaga_autoencoder.eval()
         with torch.no_grad():
             traj_pca_gaga = self.gaga_autoencoder.decode(
-                torch.tensor(traj_flat, dtype=torch.float32)
+                torch.tensor(traj_flat, dtype=torch.float32, device=self.device)
             ).cpu().numpy()
 
         # Inverse-scale back to PCA space
