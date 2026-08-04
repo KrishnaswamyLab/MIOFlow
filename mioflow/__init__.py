@@ -10,5 +10,5 @@ from mioflow.gaga import (
     train_valid_loader_from_pc,
 )
 from mioflow.core.datasets import TimeSeriesDataset
-from mioflow.spatial import compute_spatial_features, fit_spatial_gaga
+from mioflow.spatial import compute_spatial_features, fit_spatial_gaga, fit_joint_gaga
 from mioflow.growth_rate import GrowthRateModel
