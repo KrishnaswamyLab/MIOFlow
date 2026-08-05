@@ -3,6 +3,7 @@
 from typing import Optional, List
 import torch
 import numpy as np
+import pandas as pd
 import phate
 import scipy.sparse as sp
 from sklearn.decomposition import PCA
@@ -14,7 +15,6 @@ from mioflow.gaga import fit_gaga
 # TO DO: add spatial features
 # key mismatches, edge cases (and add typecasting)
 # add batch correction for multi-sample datasets?
-# NOTE: final PCA is not in the notebook prototype, which kept the z-scored blocks intact
 
 def compute_spatial_features(
     adata,
@@ -39,8 +39,9 @@ def compute_spatial_features(
     1. Local expression niche — mean PCA embedding of spatial neighbours.
     2. Neighbourhood composition — cell-type counts over neighbours plus the
        cell's own type.
-    3. Ligand-receptor signalling — not yet implemented; ``lr_pairs`` and
-       ``lr_expr_key`` are currently ignored.
+    3. Ligand-receptor signalling — for each matched pair, the cell's own receptor
+       expression times the summed ligand expression of its neighbours. Requires
+       both ``lr_pairs`` and ``lr_expr_key``.
 
     The concatenated features are z-normalised and dimensionally reduced with PCA
     to produce the final spatial embedding.
@@ -62,11 +63,15 @@ def compute_spatial_features(
         Maximum allowed spatial distance. Edges longer than this are dropped
         before symmetrisation. Units match ``coords_key``.
     lr_pairs : str, optional
-        Path to a CSV file with columns ``'Ligand'`` and ``'Receptor'``.
-        Gene names must match the column names of ``adata.obsm[lr_expr_key]``.
+        Path to a CSV holding the ligand-receptor pair list. Must have a ligand and
+        a receptor column (names matched case-insensitively). Extra
+        columns are ignored. Pairs whose ligand or receptor is absent from
+        ``adata.obsm[lr_expr_key]`` are dropped. Gene names must match the column
+        names of ``adata.obsm[lr_expr_key]``.
     lr_expr_key : str, optional
-        Key in ``adata.obsm`` holding a (n_cells, n_genes) array or DataFrame.
-        Column names must match the values in ``lr_pairs``.
+        Key in ``adata.obsm`` holding a (n_cells, n_genes) ``pandas.DataFrame`` of
+        expression values — typically MAGIC-imputed. Must be a DataFrame, since the
+        column names are what ``lr_pairs`` is matched against.
     celltype_key : str, optional
         Column in ``adata.obs`` with cell-type labels.
     n_pca_niche : int
@@ -123,7 +128,13 @@ def compute_spatial_features(
         type_feats = _sum_aggregate(one_hot, edge_index) + one_hot
         feature_blocks.append(type_feats)
 
-    # TO ADD: feature 3 (ligand-receptor signalling)
+    # FEATURE 3: ligand-receptor signalling
+    if lr_pairs is not None:
+        if lr_expr_key not in adata.obsm:
+            raise ValueError(f"'{lr_expr_key}' not found in adata.obsm.")
+
+        lr_feats = _lr_features(lr_pairs, adata.obsm[lr_expr_key], edge_index)
+        feature_blocks.append(lr_feats)
 
     # Concatenate and normalise features
     S_raw = np.concatenate(feature_blocks, axis=1) 
@@ -214,7 +225,6 @@ def fit_joint_gaga(
     encoder_epochs: int = 100,
     decoder_epochs: int = 100,
     learning_rate: float = 1e-3,
-    phate_kwargs: Optional[dict] = None,
     device: str = 'cuda' if torch.cuda.is_available() else 'cpu',
 ):
     """
@@ -222,9 +232,7 @@ def fit_joint_gaga(
 
     Z-normalises each modality separately, concatenates them as
     ``[gene, spatial_scale * spatial]``, runs PHATE on that joint matrix, and trains
-    GAGA against those joint PHATE distances. Because ``spatial_scale`` is applied to
-    raw features *before* PHATE, it genuinely controls how much spatial geometry
-    shapes the learned manifold.
+    GAGA against those joint PHATE distances.
 
     The joint matrix is written to ``adata.obsm[store_key]`` so the returned model can
     be used directly::
@@ -257,8 +265,6 @@ def fit_joint_gaga(
         Phase 2 epochs (reconstruction).
     learning_rate : float
         Adam learning rate.
-    phate_kwargs : dict, optional
-        Extra keyword arguments forwarded to ``phate.PHATE``.
     device : str
         Torch device string.
 
@@ -276,10 +282,10 @@ def fit_joint_gaga(
                 "Run compute_spatial_features() and ensure gene coordinates are present."
             )
 
-    X_gene = np.asarray(adata.obsm[gene_key], dtype=np.float32)
-    X_spatial = np.asarray(adata.obsm[spatial_key], dtype=np.float32)
+    X_gene = np.asarray(adata.obsm[gene_key])
+    X_spatial = np.asarray(adata.obsm[spatial_key])
 
-    # scale each modality separately so neither dominates by raw variance
+    # scale each modality separately so neither dominates
     scaler_gene = StandardScaler().fit(X_gene)
     scaler_spatial = StandardScaler().fit(X_spatial)
 
@@ -295,7 +301,7 @@ def fit_joint_gaga(
     )
 
     print("Computing PHATE on joint features...")
-    phate_op = phate.PHATE(n_components=latent_dim, **(phate_kwargs or {}))
+    phate_op = phate.PHATE(n_components=latent_dim)
     X_phate = phate_op.fit_transform(X_joint)
 
     model = fit_gaga(
@@ -316,6 +322,56 @@ def fit_joint_gaga(
     return model
 
 # HELPERS
+
+# per-pair signalling score: own receptor x summed neighbour ligand
+# returns (n_cells, n_matched_pairs), or None if no pair could be matched
+def _lr_features(
+    lr_pairs: str,
+    lr_expr,
+    edge_index: np.ndarray,
+) -> np.ndarray:
+
+    pairs = pd.read_csv(lr_pairs)
+
+    # case-invariant
+    lower = {str(c).lower(): c for c in pairs.columns}
+    missing = [name for name in ('ligand', 'receptor') if name not in lower]
+    if missing:
+        raise ValueError(
+            f"lr_pairs is missing {missing} column(s). "
+        )
+
+    if not isinstance(lr_expr, pd.DataFrame):
+        raise TypeError(
+            "adata.obsm[lr_expr_key] must be a pandas DataFrame whose columns are gene names"
+        )
+
+    gene_to_idx = {gene: i for i, gene in enumerate(lr_expr.columns)}
+
+    ligands = pairs[lower['ligand']]
+    receptors = pairs[lower['receptor']]
+    matched = [
+        (gene_to_idx[l], gene_to_idx[r])
+        for l, r in zip(ligands, receptors)
+        if l in gene_to_idx and r in gene_to_idx
+    ]
+
+    print(
+        f"LR features: matched {len(matched)}/{len(pairs)} pairs "
+        f"against {lr_expr.shape[1]} expression columns"
+    )
+    if not matched:
+        raise ValueError(
+            "No ligand-receptor pair had both genes present in adata.obsm[lr_expr_key]. "
+            "Check that the gene names in lr_pairs match its column names."
+        )
+
+    expr = np.asarray(lr_expr, dtype=np.float64)
+    lig_idx = [l for l, _ in matched]
+    rec_idx = [r for _, r in matched]
+
+    # sum of neighbour ligand
+    return expr[:, rec_idx] * _sum_aggregate(expr[:, lig_idx], edge_index)
 
 # builds a symmetric kNN graph, returns edge_index of shape (n_edges, 2)
 # could be more robust (more bounds checking ie min(k, n-1), n<=1)
