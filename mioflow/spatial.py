@@ -12,10 +12,6 @@ from sklearn.preprocessing import StandardScaler
 from scipy.sparse.linalg import matrix_power as sparse_matpow
 from mioflow.gaga import fit_gaga
 
-# TO DO: add spatial features
-# key mismatches, edge cases (and add typecasting)
-# add batch correction for multi-sample datasets?
-
 def compute_spatial_features(
     adata,
     coords_key: str = 'spatial',
@@ -89,7 +85,7 @@ def compute_spatial_features(
     n_cells = adata.n_obs
     coords = np.array(adata.obsm[coords_key])
 
-    # CHECK THIS
+    # one graph per batch so no edges cross slides
     if batch_key is not None:
         edge_parts = []
 
@@ -130,6 +126,8 @@ def compute_spatial_features(
 
     # FEATURE 3: ligand-receptor signalling
     if lr_pairs is not None:
+        if lr_expr_key is None:
+            raise ValueError("lr_pairs was given but lr_expr_key is None.")
         if lr_expr_key not in adata.obsm:
             raise ValueError(f"'{lr_expr_key}' not found in adata.obsm.")
 
@@ -374,13 +372,18 @@ def _lr_features(
     return expr[:, rec_idx] * _sum_aggregate(expr[:, lig_idx], edge_index)
 
 # builds a symmetric kNN graph, returns edge_index of shape (n_edges, 2)
-# could be more robust (more bounds checking ie min(k, n-1), n<=1)
 def _build_graph(
     coords: np.ndarray,
     k: int,
     n_hops: int,
     d_max: Optional[float],
 ) -> np.ndarray:
+
+    # a single cell has no neighbours; kNN also needs k < n
+    n = coords.shape[0]
+    if n <= 1:
+        return np.empty((0, 2), dtype=np.int64)
+    k = min(k, n - 1)
 
     # build weighted kNN graph based on spatial coordinates
     G = knn(coords, k, mode='distance')
@@ -425,7 +428,7 @@ def _mean_aggregate(X: np.ndarray, edge_index: np.ndarray) -> np.ndarray:
 
     counts = np.maximum(counts, 1)  # prevent division by zero
 
-    return out / counts[:, None] # think this works? should be broadcasting counts for each feature dimension
+    return out / counts[:, None]
 
 # sum-aggregate X over neighbours defined by edge_index
 def _sum_aggregate(X: np.ndarray, edge_index: np.ndarray) -> np.ndarray:
