@@ -178,6 +178,9 @@ class MIOFlow:
         self.growth_rate_model = growth_rate_model
         self.growth_rate_lr = growth_rate_lr
 
+        # Spatial: train a joint embedding with spatial.fit_joint_gaga(), then pass
+        # it here as gaga_model= with gaga_input_key='X_joint'.
+
         # State
         self.is_fitted = False
         self.ode_model = None
@@ -332,13 +335,21 @@ class MIOFlow:
     # Post-fitting API
     # ------------------------------------------------------------------
 
-    def decode_to_gene_space(self) -> np.ndarray:
+    def decode_to_gene_space(self, pcs_key: str = 'PCs') -> np.ndarray:
         """
         Decode trajectories from GAGA latent space back to gene space.
 
         Requires:
         - ``gaga_model`` passed at construction (for latent → PCA decoding)
-        - ``adata.varm['PCs']`` (for PCA → gene space)
+        - ``adata.varm[pcs_key]`` (for PCA → gene space)
+
+        For a joint model from ``spatial.fit_joint_gaga()``, only the gene block of
+        the decoded joint features is used; the spatial block is discarded.
+
+        Parameters
+        ----------
+        pcs_key : str
+            Key in ``adata.varm`` holding the PCA loadings, shape (n_genes, n_pcs).
 
         Returns
         -------
@@ -351,8 +362,8 @@ class MIOFlow:
                 "No GAGA model available. Pass a trained Autoencoder via "
                 "gaga_model= at construction time."
             )
-        if 'PCs' not in self.adata.varm:
-            raise RuntimeError("adata.varm['PCs'] is required for gene-space decoding.")
+        if pcs_key not in self.adata.varm:
+            raise RuntimeError(f"adata.varm['{pcs_key}'] is required for gene-space decoding.")
 
         # Flatten (n_bins, n_traj, latent_dim) → (n_bins * n_traj, latent_dim) for batch decoding
         traj_shape = self.trajectories.shape
@@ -369,9 +380,15 @@ class MIOFlow:
         scaler = getattr(self.gaga_autoencoder, 'input_scaler', None)
         traj_pca = scaler.inverse_transform(traj_pca_gaga) if scaler is not None else traj_pca_gaga
 
+        # Joint model: keep the gene block and undo its per-modality scaling
+        joint_scalers = getattr(self.gaga_autoencoder, 'joint_scalers', None)
+        if joint_scalers is not None:
+            scaler_gene = joint_scalers[0]
+            traj_pca = scaler_gene.inverse_transform(traj_pca[:, :scaler_gene.n_features_in_])
+
         # PCA → gene space
         X_reconstructed = np.array(
-            traj_pca @ self.adata.varm['PCs'].T + np.array(self.adata.X.mean(axis=0))
+            traj_pca @ self.adata.varm[pcs_key].T + np.array(self.adata.X.mean(axis=0))
         )
         self.trajectories_gene_space = X_reconstructed.reshape(
             traj_shape[0], traj_shape[1], -1
