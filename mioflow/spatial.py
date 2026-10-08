@@ -42,6 +42,10 @@ def compute_spatial_features(
     The concatenated features are z-normalised and dimensionally reduced with PCA
     to produce the final spatial embedding.
 
+    Batch correction is not performed here: ``adata.X`` (used for the niche block)
+    is assumed to be already batch-corrected. ``batch_key`` only keeps spatial
+    edges from crossing sections.
+
     Parameters
     ----------
     adata : AnnData
@@ -52,9 +56,8 @@ def compute_spatial_features(
         Number of nearest spatial neighbours for the base kNN graph.
         Clipped to ``n_cells - 1`` (per batch when ``batch_key`` is set).
     n_hops : int
-        Graph power applied to the binarised kNN adjacency. Note this yields walks
-        of length exactly ``n_hops``, not all neighbours within ``n_hops`` — matching
-        the notebook prototype. The two differ negligibly on dense kNN graphs.
+        Neighbourhood radius in graph hops: every cell reachable within ``n_hops``
+        steps of the base kNN graph counts as a neighbour.
     d_max : float, optional
         Maximum allowed spatial distance. Edges longer than this are dropped
         before symmetrisation. Units match ``coords_key``.
@@ -247,7 +250,10 @@ def fit_joint_gaga(
     spatial_key : str
         Key in ``adata.obsm`` holding the output of ``compute_spatial_features()``.
     spatial_scale : float
-        Weight on the spatial block. 0 recovers a gene-only embedding.
+        Weight on the spatial block in the PHATE geometry that the GAGA encoder
+        learns to preserve. The autoencoder input itself is re-standardised per
+        column by ``fit_gaga()``, so the weight acts through PHATE only.
+        0 recovers a gene-only embedding.
     store_key : str
         Key in ``adata.obsm`` where the joint input matrix is stored. Pass this same
         key as ``gaga_input_key`` to ``MIOFlow``.
@@ -322,7 +328,7 @@ def fit_joint_gaga(
 # HELPERS
 
 # per-pair signalling score: own receptor x summed neighbour ligand
-# returns (n_cells, n_matched_pairs), or None if no pair could be matched
+# returns (n_cells, n_matched_pairs); raises ValueError if no pair could be matched
 def _lr_features(
     lr_pairs: str,
     lr_expr,
@@ -399,8 +405,9 @@ def _build_graph(
     G.setdiag(0)
     G.eliminate_zeros()
 
-    # expand neighbourhood
+    # expand neighbourhood: self-loops make (A + I)^n reach every node within n hops
     if n_hops > 1:
+        G = G + sp.identity(n, format='csr', dtype=bool)
         G = sparse_matpow(G, n_hops)
         G = (G > 0)
         G.setdiag(0)
